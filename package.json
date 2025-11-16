@@ -6,9 +6,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "test": "vitest",
+    "test:run": "vitest run"
   },
   "dependencies": {
     "astro": "^5.15.8"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.1",
+    "prettier": "^3.6.2",
+    "vitest": "^4.0.9"
   }
 }
