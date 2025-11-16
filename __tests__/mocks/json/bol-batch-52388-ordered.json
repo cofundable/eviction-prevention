@@ -21,20 +21,6 @@
       }
     },
     {
-      "partyType": "attorney",
-      "name": "Smith, Robert A.",
-      "appearanceDate": "05/18/2024",
-      "address": {
-        "line1": "Smith, Johnson, & Associates",
-        "line2": "456 OAK AVENUE",
-        "line3": "6th Floor",
-        "city": "BALTIMORE",
-        "state": "MD",
-        "zipCode": "21202"
-      },
-      "representedParty": "landlord"
-    },
-    {
       "partyType": "tenant",
       "name": "TEST PARTNERSHIP INITIATIVE",
       "address": {
