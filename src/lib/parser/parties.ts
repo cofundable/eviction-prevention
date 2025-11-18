@@ -29,7 +29,11 @@ function determinePartyType(headerText: string): PartyType | null {
  * Parses a single party from a section element.
  * @internal
  */
-function parseParty($: Root, section: Cheerio, partyType: string): Party | null {
+function parseParty(
+  $: Root,
+  section: Cheerio,
+  partyType: string
+): Party | null {
   // Find the first "Name:" row in the section (only from the first table that has it)
   const nameRow = section
     .find("table")
@@ -99,7 +103,7 @@ function parseParties($: Root, bodyWindow: Cheerio): Party[] {
     }
 
     // Create a wrapper to contain all section tables
-    const sectionWrapper = $("<div>").append(sectionTables);
+    const sectionWrapper = $("<div>").append(sectionTables.join(""));
 
     const partyType = determinePartyType(h6Text);
     if (partyType) {

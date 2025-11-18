@@ -18,4 +18,3 @@ export function parseCaseData(html: string): CaseData {
     timeline,
   };
 }
-
