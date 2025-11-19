@@ -1,0 +1,77 @@
+{
+  "caseDetails": {
+    "courtSystem": "District Court For - Civil",
+    "location": "Fayette Ave",
+    "caseNumber": "D-01-LT-24-52388-002",
+    "title": "South Street Holdings, LLC vs. TEST PARTNERSHIP INITIATIVE",
+    "caseType": "Breach of Lease",
+    "filingDate": "05/18/2024",
+    "caseStatus": "Closed"
+  },
+  "parties": [
+    {
+      "partyType": "landlord",
+      "name": "South Street Holdings, LLC",
+      "address": {
+        "street": "789 ELM STREET",
+        "unit": "SUITE 215",
+        "city": "COLUMBIA",
+        "state": "MD",
+        "zipCode": "21044"
+      }
+    },
+    {
+      "partyType": "tenant",
+      "name": "TEST PARTNERSHIP INITIATIVE",
+      "address": {
+        "street": "321 PINE STREET",
+        "unit": "Stes 300 & 301",
+        "city": "Baltimore",
+        "state": "MD",
+        "zipCode": "21202"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "date": "05/18/2024",
+      "eventType": "Complaint / Petition - Landlord Tenant",
+      "comment": ""
+    },
+    {
+      "date": "05/27/2024",
+      "eventType": "Affidavit - Service",
+      "comment": "AFFIDAVIT OF SERVICE FOR COMMERCIAL TENANT"
+    },
+    {
+      "date": "06/02/2024",
+      "eventType": "Landlord Tenant Disposition in Favor of Landlord",
+      "comment": ""
+    },
+    {
+      "date": "12/30/2024",
+      "eventType": "Petition - For Warrant of Restitution Filed",
+      "comment": "PETITION FOR WARRANT OF RESTITUTION"
+    },
+    {
+      "date": "07/08/2024",
+      "eventType": "Petition - For Warrant of Restitution Filed",
+      "comment": "Petition For Warrant of Restitution"
+    },
+    {
+      "date": "07/13/2024",
+      "eventType": "Warrant of Restitution Denied",
+      "comment": "PER 0AU: DENIED JUDGEMENT NOT ENTERED \"WITHOUT RIGHT OF REDEMPTION'"
+    },
+    {
+      "date": "07/20/2024",
+      "eventType": "Petition - For Warrant of Restitution Filed",
+      "comment": "PETITION FOR WARRANT OF RESTITUTION"
+    },
+    {
+      "date": "07/22/2024",
+      "eventType": "Warrant of Restitution Ordered",
+      "comment": ""
+    }
+  ]
+}

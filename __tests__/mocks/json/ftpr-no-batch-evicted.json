@@ -1,0 +1,90 @@
+{
+  "caseDetails": {
+    "courtSystem": "District Court For - Civil",
+    "location": "Fayette Ave",
+    "caseNumber": "D-143-LT-24-003564",
+    "title": "SMITH, THOMAS vs. DOE, ROBERT M, et al.",
+    "caseType": "Failure to Pay Rent",
+    "filingDate": "06/15/2024",
+    "caseStatus": "Closed"
+  },
+  "parties": [
+    {
+      "partyType": "agent",
+      "name": "WILLIAMS, DAVID L",
+      "address": {
+        "street": "789 ELM STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21207"
+      }
+    },
+    {
+      "partyType": "landlord",
+      "name": "SMITH, THOMAS",
+      "address": {
+        "street": "123 MAIN STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21207"
+      }
+    },
+    {
+      "partyType": "tenant",
+      "name": "DOE, ROBERT M",
+      "address": {
+        "street": "456 OAK AVENUE",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21208"
+      }
+    },
+    {
+      "partyType": "tenant",
+      "name": "JONES, JAMES K",
+      "address": {
+        "street": "456 OAK AVENUE",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21208"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "date": "06/15/2024",
+      "eventType": "Complaint / Petition - Landlord Tenant",
+      "comment": ""
+    },
+    {
+      "date": "12/18/2024",
+      "eventType": "Landlord Tenant Disposition in Favor of Landlord",
+      "comment": ""
+    },
+    {
+      "date": "12/30/2024",
+      "eventType": "Petition - For Warrant of Restitution Filed",
+      "comment": ""
+    },
+    {
+      "date": "07/19/2024",
+      "eventType": "Warrant of Restitution Ordered",
+      "comment": ""
+    },
+    {
+      "date": "07/27/2024",
+      "eventType": "Returned/Undeliverable Mail",
+      "comment": ""
+    },
+    {
+      "date": "07/27/2024",
+      "eventType": "Returned/Undeliverable Mail",
+      "comment": "RETURN TO SENDER"
+    },
+    {
+      "date": "09/12/2024",
+      "eventType": "Warrant of Restitution - Return of Service - Evicted",
+      "comment": ""
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "caseDetails": {
+    "courtSystem": "District Court For - Civil",
+    "location": "Fayette Ave",
+    "caseNumber": "D-01-LT-24-48291-035",
+    "title": "Northwood Homes LP TA NORTHWOOD HOMES vs. DOE, JANE A",
+    "caseType": "Tenant Holding Over",
+    "filingDate": "04/12/2024",
+    "caseStatus": "Closed"
+  },
+  "parties": [
+    {
+      "partyType": "tenant",
+      "name": "Doe, Jane A.",
+      "address": {
+        "street": "456 OAK AVENUE",
+        "unit": "APT E",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21205"
+      }
+    },
+    {
+      "partyType": "landlord",
+      "name": "Northwood Homes LP TA NORTHWOOD HOMES",
+      "address": {
+        "street": "123 MAIN STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21205"
+      }
+    },
+    {
+      "partyType": "agent",
+      "name": "RENTCOURTFILE, LLC",
+      "address": {
+        "street": "789 ELM STREET, STE 300",
+        "city": "Towson",
+        "state": "MD",
+        "zipCode": "21204"
+      }
+    }
+  ],
+  "timeline": [
+    {
+      "date": "04/12/2024",
+      "eventType": "Complaint / Petition - Landlord Tenant",
+      "comment": "RCFLLC:1153:Failure To Pay Rent"
+    },
+    {
+      "date": "05/28/2024",
+      "eventType": "Landlord Tenant Disposition in Favor of Landlord",
+      "comment": "EVICTION STAYED UNTIL 06/30/2024"
+    },
+    {
+      "date": "07/13/2024",
+      "eventType": "Petition - For Warrant of Restitution Filed",
+      "comment": "RCFLLC::Warrant of Restitution"
+    },
+    {
+      "date": "07/13/2024",
+      "eventType": "Request for Sheriff/Constable Service - ($40.00)",
+      "comment": "RCFLLC::Warrant of Restitution"
+    },
+    {
+      "date": "08/21/2024",
+      "eventType": "Warrant of Restitution Ordered",
+      "comment": ""
+    },
+    {
+      "date": "04/25/2025",
+      "eventType": "Warrant of Restitution - Return of Service - Cancelled",
+      "comment": "CANCELLED"
+    }
+  ]
+}
