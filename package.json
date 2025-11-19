@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "lint:check": "eslint .",
     "format:check": "prettier --check .",
-    "checks": "npm run lint:check && npm run format:check"
+    "checks": "npm run lint:check && npm run format:check",
+    "parse:html": "tsx scripts/parse-html-to-json.ts"
   },
   "dependencies": {
     "astro": "^5.15.8",
@@ -27,6 +28,7 @@
     "globals": "^16.5.0",
     "prettier": "^3.6.2",
     "prettier-plugin-astro": "^0.14.1",
+    "tsx": "^4.19.2",
     "typescript-eslint": "^8.47.0",
     "vitest": "^4.0.9"
   }
