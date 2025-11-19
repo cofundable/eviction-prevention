@@ -8,6 +8,10 @@ dist/
 # Test mocks (preserve original formatting)
 __tests__/mocks/
 
+# GitHub templates
+.github/ISSUE_TEMPLATE/
+.github/pull_request.md
+
 # Lock files
 package-lock.json
 yarn.lock
