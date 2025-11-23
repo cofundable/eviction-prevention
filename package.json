@@ -15,14 +15,17 @@
     "lint:check": "eslint .",
     "format:check": "prettier --check .",
     "checks": "npm run lint:check && npm run format:check",
-    "parse:html": "tsx scripts/parse-html-to-json.ts"
+    "parse:html": "tsx scripts/parse-html-to-json.ts",
+    "load:db": "tsx scripts/load-json-to-db.ts"
   },
   "dependencies": {
     "astro": "^5.15.8",
+    "better-sqlite3": "^12.4.5",
     "cheerio": "^1.1.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/cheerio": "^0.22.35",
     "@vitest/coverage-v8": "^4.0.10",
     "eslint": "^9.39.1",
