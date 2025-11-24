@@ -18,7 +18,7 @@
     "parse:html": "tsx scripts/parse-html-to-json.ts"
   },
   "dependencies": {
-    "astro": "^5.15.8",
+    "astro": "^5.15.9",
     "cheerio": "^1.1.2"
   },
   "devDependencies": {
