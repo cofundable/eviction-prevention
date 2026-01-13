@@ -1,6 +1,6 @@
 import type { Party, Root, Cheerio, Element } from "./types";
 import { PartyType } from "./types";
-import { getTextValue } from "./helpers";
+import { getTextValue, normalizeName, normalizeAddressObject } from "./helpers";
 import { parseAddress } from "./address";
 
 /**
@@ -49,6 +49,9 @@ function parseParty(
 
   const name = getTextValue(nameRow.find(".Value"));
 
+  // Normalize the name
+  const { normalized: nameNormalized, parts: nameParts } = normalizeName(name);
+
   // Find the table containing the address (usually the next table after the name)
   let addressTable = nameRow.closest("table").next("table");
   if (addressTable.length === 0) {
@@ -57,10 +60,16 @@ function parseParty(
 
   const address = parseAddress($, addressTable);
 
+  // Normalize the entire address
+  const addressNormalized = normalizeAddressObject(address);
+
   const party: Party = {
     partyType,
     name,
+    nameNormalized,
+    nameParts,
     address,
+    addressNormalized,
   };
 
   return party;

@@ -47,7 +47,10 @@ export enum PartyType {
 export interface Party {
   partyType?: PartyType | string;
   name: string;
+  nameNormalized?: string;
+  nameParts?: string[]; // Split by T/A, TA, C/O, etc.
   address: Address;
+  addressNormalized?: Address;
   appearanceDate?: string;
   representedParty?: string;
 }

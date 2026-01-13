@@ -12,8 +12,19 @@
     {
       "partyType": "tenant",
       "name": "Doe, Jane A.",
+      "nameNormalized": "DOE JANE A",
+      "nameParts": [
+        "DOE JANE A"
+      ],
       "address": {
         "street": "456 OAK AVENUE",
+        "unit": "APT E",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21205"
+      },
+      "addressNormalized": {
+        "street": "456 OAK AVE",
         "unit": "APT E",
         "city": "BALTIMORE",
         "state": "MD",
@@ -23,8 +34,19 @@
     {
       "partyType": "landlord",
       "name": "Northwood Homes LP TA NORTHWOOD HOMES",
+      "nameNormalized": "NORTHWOOD HOMES LP NORTHWOOD HOMES",
+      "nameParts": [
+        "NORTHWOOD HOMES LP",
+        "NORTHWOOD HOMES"
+      ],
       "address": {
         "street": "123 MAIN STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21205"
+      },
+      "addressNormalized": {
+        "street": "123 MAIN ST",
         "city": "BALTIMORE",
         "state": "MD",
         "zipCode": "21205"
@@ -33,9 +55,19 @@
     {
       "partyType": "agent",
       "name": "RENTCOURTFILE, LLC",
+      "nameNormalized": "RENTCOURTFILE LLC",
+      "nameParts": [
+        "RENTCOURTFILE LLC"
+      ],
       "address": {
         "street": "789 ELM STREET, STE 300",
         "city": "Towson",
+        "state": "MD",
+        "zipCode": "21204"
+      },
+      "addressNormalized": {
+        "street": "789 ELM ST STE 300",
+        "city": "TOWSON",
         "state": "MD",
         "zipCode": "21204"
       }

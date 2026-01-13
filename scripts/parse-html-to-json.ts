@@ -5,6 +5,32 @@ import { parseCaseData } from "../src/lib/parser/index.js";
 const HTML_DIR = join(process.cwd(), "data", "html");
 const JSON_DIR = join(process.cwd(), "data", "json");
 
+async function parseHtmlFile(htmlFile: string): Promise<{
+  success: boolean;
+  htmlFile: string;
+  jsonFile?: string;
+  error?: unknown;
+}> {
+  try {
+    const htmlPath = join(HTML_DIR, htmlFile);
+    const htmlContent = await readFile(htmlPath, "utf-8");
+
+    // Parse the HTML
+    const caseData = parseCaseData(htmlContent);
+
+    // Generate JSON filename
+    const jsonFileName = basename(htmlFile, ".html") + ".json";
+    const jsonPath = join(JSON_DIR, jsonFileName);
+
+    // Write JSON file
+    await writeFile(jsonPath, JSON.stringify(caseData, null, 2), "utf-8");
+
+    return { success: true, htmlFile, jsonFile: jsonFileName };
+  } catch (error) {
+    return { success: false, htmlFile, error };
+  }
+}
+
 async function parseAllHtmlFiles() {
   try {
     // Read all files from the HTML directory
@@ -13,35 +39,27 @@ async function parseAllHtmlFiles() {
 
     console.log(`Found ${htmlFiles.length} HTML files to parse`);
 
-    let successCount = 0;
-    let errorCount = 0;
+    // Process all files in parallel
+    const results = await Promise.all(
+      htmlFiles.map((htmlFile) => parseHtmlFile(htmlFile))
+    );
 
-    // Process each HTML file
-    for (const htmlFile of htmlFiles) {
-      try {
-        const htmlPath = join(HTML_DIR, htmlFile);
-        const htmlContent = await readFile(htmlPath, "utf-8");
+    // Collect and print results
+    const successful = results.filter((r) => r.success);
+    const failed = results.filter((r) => !r.success);
 
-        // Parse the HTML
-        const caseData = parseCaseData(htmlContent);
+    // Print successful files
+    successful.forEach((result) => {
+      console.log(`✓ Parsed ${result.htmlFile} -> ${result.jsonFile}`);
+    });
 
-        // Generate JSON filename
-        const jsonFileName = basename(htmlFile, ".html") + ".json";
-        const jsonPath = join(JSON_DIR, jsonFileName);
-
-        // Write JSON file
-        await writeFile(jsonPath, JSON.stringify(caseData, null, 2), "utf-8");
-
-        successCount++;
-        console.log(`✓ Parsed ${htmlFile} -> ${jsonFileName}`);
-      } catch (error) {
-        errorCount++;
-        console.error(`✗ Error parsing ${htmlFile}:`, error);
-      }
-    }
+    // Print failed files
+    failed.forEach((result) => {
+      console.error(`✗ Error parsing ${result.htmlFile}:`, result.error);
+    });
 
     console.log(
-      `\nCompleted: ${successCount} successful, ${errorCount} errors`
+      `\nCompleted: ${successful.length} successful, ${failed.length} errors`
     );
   } catch (error) {
     console.error("Error reading HTML directory:", error);
