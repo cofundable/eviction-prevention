@@ -109,6 +109,7 @@ function upsertCase(db: Database.Database, caseData: CaseData): number {
 
 /**
  * Insert an address into the database.
+ * Main fields store normalized values, _original fields store original values.
  */
 function insertAddress(
   db: Database.Database,
@@ -118,18 +119,34 @@ function insertAddress(
     city?: string;
     state?: string;
     zipCode?: string;
+  },
+  addressNormalized?: {
+    street?: string;
+    unit?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
   }
 ): number {
   const insertStmt = db.prepare(`
-    INSERT INTO addresses (street, unit, city, state, zip_code)
-    VALUES (?, ?, ?, ?, ?)
+    INSERT INTO addresses (
+      street, unit, city, state, zip_code,
+      street_original, unit_original, city_original, state_original
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const result = insertStmt.run(
+    // Main fields: normalized values
+    addressNormalized?.street,
+    addressNormalized?.unit,
+    addressNormalized?.city,
+    addressNormalized?.state,
+    address.zipCode, // zip code doesn't need normalization
+    // Original fields: original values
     address.street,
     address.unit,
     address.city,
-    address.state,
-    address.zipCode
+    address.state
   );
   return result.lastInsertRowid as number;
 }
@@ -147,21 +164,32 @@ function insertParties(
       case_id,
       party_type,
       name,
+      name_original,
+      name_parts,
       address_id,
       appearance_date,
       represented_party
-    ) VALUES (?, ?, ?, ?, ?, ?)
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
 
   for (const party of caseData.parties) {
     const addressId = party.address
-      ? insertAddress(db, party.address)
+      ? insertAddress(db, party.address, party.addressNormalized)
+      : undefined;
+
+    // Store name_parts as JSON string
+    const namePartsJson = party.nameParts
+      ? JSON.stringify(party.nameParts)
       : undefined;
 
     insertStmt.run(
       caseId,
       party.partyType,
+      // Main field: normalized name
+      party.nameNormalized || party.name,
+      // Original field: original name
       party.name,
+      namePartsJson,
       addressId,
       party.appearanceDate,
       party.representedParty

@@ -33,11 +33,15 @@ export interface DbCaseEvent {
 
 export interface DbAddress {
   id: number;
-  street?: string;
-  unit?: string;
-  city?: string;
-  state?: string;
+  street?: string; // normalized
+  unit?: string; // normalized
+  city?: string; // normalized
+  state?: string; // normalized
   zip_code?: string;
+  street_original?: string;
+  unit_original?: string;
+  city_original?: string;
+  state_original?: string;
   created_at: string;
 }
 
@@ -45,7 +49,9 @@ export interface DbCaseParty {
   id: number;
   case_id: number;
   party_type?: string;
-  name: string;
+  name: string; // normalized
+  name_original?: string;
+  name_parts?: string; // JSON array stored as text
   address_id?: number;
   appearance_date?: string;
   represented_party?: string;
@@ -101,6 +107,10 @@ export function initializeSchema(db: Database.Database): void {
       city TEXT,
       state TEXT,
       zip_code TEXT,
+      street_original TEXT,
+      unit_original TEXT,
+      city_original TEXT,
+      state_original TEXT,
       created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
@@ -112,6 +122,8 @@ export function initializeSchema(db: Database.Database): void {
       case_id INTEGER NOT NULL,
       party_type TEXT,
       name TEXT NOT NULL,
+      name_original TEXT,
+      name_parts TEXT,
       address_id INTEGER,
       appearance_date TEXT,
       represented_party TEXT,
@@ -140,8 +152,11 @@ export function initializeSchema(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_cases_case_type ON cases(case_type_id);
     CREATE INDEX IF NOT EXISTS idx_cases_case_status ON cases(case_status_id);
     CREATE INDEX IF NOT EXISTS idx_case_parties_case_id ON case_parties(case_id);
+    CREATE INDEX IF NOT EXISTS idx_case_parties_name ON case_parties(name);
     CREATE INDEX IF NOT EXISTS idx_case_events_case_id ON case_events(case_id);
     CREATE INDEX IF NOT EXISTS idx_case_events_date ON case_events(date);
+    CREATE INDEX IF NOT EXISTS idx_addresses_street ON addresses(street);
+    CREATE INDEX IF NOT EXISTS idx_addresses_city ON addresses(city);
   `);
 }
 

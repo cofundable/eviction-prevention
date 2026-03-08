@@ -155,7 +155,7 @@ function main() {
     });
   }
 
-  console.log("\n   Tenants by city:");
+  console.log("\n   Tenants by city (using normalized data):");
   const tenantsByCity = db
     .prepare(
       `
@@ -174,6 +174,28 @@ function main() {
   } else {
     tenantsByCity.forEach((row) => {
       console.log(`      ${row.city}: ${row.tenant_count} tenants`);
+    });
+  }
+
+  console.log("\n   Example: Search for normalized names containing 'LLC':");
+  const llcParties = db
+    .prepare(
+      `
+    SELECT DISTINCT cp.name, cp.name_original
+    FROM case_parties cp
+    WHERE cp.name LIKE '%LLC%'
+    LIMIT 5
+  `
+    )
+    .all() as Array<{ name: string; name_original: string | null }>;
+
+  if (llcParties.length === 0) {
+    console.log("      (none found)");
+  } else {
+    llcParties.forEach((row) => {
+      console.log(
+        `      "${row.name}" (original: "${row.name_original || "N/A"}")`
+      );
     });
   }
 
