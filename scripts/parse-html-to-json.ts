@@ -1,9 +1,12 @@
 import { readdir, readFile, writeFile } from "fs/promises";
 import { join, extname, basename } from "path";
 import { parseCaseData } from "../src/lib/parser/index.js";
+import { mkdirSync } from "fs";
 
 const HTML_DIR = join(process.cwd(), "data", "html");
 const JSON_DIR = join(process.cwd(), "data", "json");
+mkdirSync(JSON_DIR, { recursive: true });
+mkdirSync(HTML_DIR, { recursive: true });
 
 async function parseHtmlFile(htmlFile: string): Promise<{
   success: boolean;

@@ -12,7 +12,9 @@ const PARTY_TYPE_MAPPING: Array<{
   partyType: PartyType;
 }> = [
   { headerText: "Landlord / Plaintiff", partyType: PartyType.LANDLORD },
+  { headerText: "Plaintiff", partyType: PartyType.LANDLORD },
   { headerText: "Tenant / Defendant", partyType: PartyType.TENANT },
+  { headerText: "Defendant", partyType: PartyType.TENANT },
   { headerText: "Landlord's Agent", partyType: PartyType.AGENT },
 ];
 

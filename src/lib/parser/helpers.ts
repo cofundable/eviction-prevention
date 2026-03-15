@@ -243,6 +243,31 @@ function normalizeAddressString(address: string): string {
 }
 
 /**
+ * Known city name misspellings and variants mapped to their correct forms.
+ * @internal
+ */
+const CITY_CORRECTIONS: Record<string, string> = {
+  BATIMORE: "BALTIMORE",
+  BALTIMROE: "BALTIMORE",
+  BALTIMOREQ: "BALTIMORE",
+  BALTIMIORE: "BALTIMORE",
+  BALLTIMORE: "BALTIMORE",
+  BALITMORE: "BALTIMORE",
+  BALITIMORE: "BALTIMORE",
+  "BALTIMORE CITY": "BALTIMORE",
+  BALT: "BALTIMORE",
+  BAL: "BALTIMORE",
+};
+
+/**
+ * Applies known city corrections to a normalized (uppercased) city string.
+ * @internal
+ */
+function correctCityName(city: string): string {
+  return CITY_CORRECTIONS[city] ?? city;
+}
+
+/**
  * Normalizes an entire Address object into a normalized Address object.
  * Each field is normalized individually while preserving the structure.
  * @internal
@@ -271,9 +296,9 @@ function normalizeAddressObject(address: Address): Address {
     normalized.line3 = normalizeAddressString(address.line3);
   }
 
-  // Normalize city
+  // Normalize city, then apply corrections
   if (address.city) {
-    normalized.city = normalizeAddressString(address.city);
+    normalized.city = correctCityName(normalizeAddressString(address.city));
   }
 
   // Normalize state (ensure uppercase)
