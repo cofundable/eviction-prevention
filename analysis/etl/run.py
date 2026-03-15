@@ -150,6 +150,8 @@ WITH owner_totals AS (
     SELECT csa2010, OWNER_1 AS owner_name, SUM(DWELUNIT) AS owner_units
     FROM real_property_with_csa
     WHERE PERMHOME IN ('N', 'D')
+      AND OWNER_1 IS NOT NULL
+      AND TRIM(OWNER_1) != ''
     GROUP BY csa2010, OWNER_1
 ),
 csa_totals AS (
@@ -157,7 +159,9 @@ csa_totals AS (
         COUNT(*)                                                      AS total_residential_properties,
         SUM(DWELUNIT)                                                 AS total_residential_units,
         SUM(CASE WHEN PERMHOME IN ('N', 'D') THEN DWELUNIT END)      AS total_rental_units,
-        COUNT(DISTINCT CASE WHEN PERMHOME IN ('N', 'D') THEN OWNER_1 END) AS unique_owners
+        COUNT(DISTINCT CASE WHEN PERMHOME IN ('N', 'D')
+            AND OWNER_1 IS NOT NULL AND TRIM(OWNER_1) != ''
+            THEN OWNER_1 END)                                         AS unique_owners
     FROM real_property_with_csa GROUP BY csa2010
 ),
 top10 AS (

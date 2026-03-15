@@ -28,3 +28,8 @@ pnpm-debug.log*
 # local data files
 data/
 *.db
+
+# analysis pipeline outputs and inputs
+analysis/outputs/
+analysis/*.duckdb
+analysis/data/
