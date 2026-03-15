@@ -17,7 +17,8 @@
     "checks": "npm run lint:check && npm run format:check",
     "parse:html": "tsx scripts/parse-html-to-json.ts",
     "load:db": "tsx scripts/load-json-to-db.ts",
-    "check:missing": "tsx scripts/check-missing-cases.ts"
+    "check:missing": "tsx scripts/check-missing-cases.ts",
+    "geocode": "tsx scripts/geocode-tenant-addresses.ts"
   },
   "dependencies": {
     "astro": "^5.15.8",
