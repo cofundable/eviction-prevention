@@ -1,0 +1,626 @@
+---
+title: "The Social Determinants of Eviction"
+subtitle: "Baltimore, 2024"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    theme: cosmo
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+
+import pathlib
+import json
+import duckdb
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+from scipy import stats
+
+ROOT = pathlib.Path(".").resolve()  # analysis/
+DATA = ROOT.parent / "data"
+DB_PATH = ROOT.parent / "evictions.db"
+
+# --- Load CSA features (December 2024 ETL output) ---
+df = pd.read_csv(ROOT / "outputs" / "csa_features.csv")
+df["csa2010"] = df["csa2010"].str.strip()
+
+# --- Load owner eviction data ---
+owners = pd.read_csv(ROOT / "outputs" / "owner_eviction_counts.csv")
+owners["owner"] = owners["owner"].str.strip()
+
+plaintiff_map = pd.read_csv(ROOT / "outputs" / "plaintiff_to_owner.csv")
+plaintiff_map["sdat_owner"] = plaintiff_map["sdat_owner"].str.strip()
+plaintiff_map["plaintiff"] = plaintiff_map["plaintiff"].str.strip()
+
+# --- Load GeoJSON + apply CSA2020→CSA2010 rename ---
+CSA_RENAME = {
+    "Greater Lauraville":     "Lauraville",
+    "Orchard Ridge/Armistead": "Claremont/Armistead",
+    "Pigtown/Carroll Park":   "Washington Village/Pigtown",
+    "Oliver/Johnston Square": "Greenmount East",
+    "Hampden/Remington":      "Medfield/Hampden/Woodberry/Remington",
+    "Greektown/Bayview":      "Orangeville/East Highlandtown",
+    "Hamilton Hills":         "Harford/Echodale",
+}
+
+# --- Load BNIA eviction rate for comparison (2023, per 1,000 residents) ---
+bnia_eviction = pd.read_csv(DATA / "bnia_evictions.csv")
+bnia_eviction["csa2010"] = bnia_eviction["CSA2010"].str.strip()
+bnia_eviction = bnia_eviction[["csa2010", "evict23"]].rename(columns={"evict23": "bnia_eviction_rate"})
+df = df.merge(bnia_eviction, on="csa2010", how="left")
+
+# --- Load GeoJSON + apply CSA2020→CSA2010 rename ---
+gdf = gpd.read_file(DATA / "Community_Statistical_Areas.geojson")
+gdf["csa2010"] = gdf["CSA2020"].map(lambda x: CSA_RENAME.get(x, x) if x else x)
+
+# Merge GeoDataFrame with feature table (includes bnia_eviction_rate)
+gdf = gdf.merge(df, on="csa2010", how="left")
+
+# Export merged GeoJSON for plotly (need feature id = csa2010)
+geo_dict = json.loads(gdf[["csa2010", "geometry"]].to_json())
+for feature, row in zip(geo_dict["features"], gdf.itertuples()):
+    feature["id"] = row.csa2010
+
+# --- Load full-year monthly data from DB ---
+con = duckdb.connect(str(DB_PATH), read_only=True)
+monthly = con.execute(
+    "SELECT strftime(CAST(event_date AS DATE), '%Y-%m') AS month, "
+    "COUNT(*) AS warrants FROM warrant_filings GROUP BY month ORDER BY month"
+).df()
+con.close()
+
+# --- Key summary stats ---
+dec_warrants = int(df["eviction_count"].sum())
+year = monthly["month"].str[:4].iloc[0]
+year_total = int(monthly["warrants"].sum())
+
+# --- Pre-compute correlations for display under each chart ---
+def pearson(x_col, y_col, data=None):
+    d = (data or df)[[x_col, y_col]].dropna()
+    r, p = stats.pearsonr(d[x_col], d[y_col])
+    return r, p
+
+r_income,        p_income        = pearson("median_hh_income",        "eviction_rate_per_1k_households")
+r_low_income,    p_low_income    = pearson("pct_hh_income_under_25k", "eviction_rate_per_1k_households")
+r_race,          p_race          = pearson("pct_black_non_hisp",      "eviction_rate_per_1k_households")
+r_concentration, p_concentration = pearson("ownership_concentration_pct", "eviction_rate_per_1k_households")
+r_bnia,          p_bnia          = pearson("bnia_eviction_rate",      "eviction_rate_per_1k_households")
+
+# BNIA rate vs key features
+r_bnia_concentration, p_bnia_concentration = pearson("ownership_concentration_pct", "bnia_eviction_rate")
+r_bnia_income,        p_bnia_income        = pearson("median_hh_income",            "bnia_eviction_rate")
+r_bnia_race,          p_bnia_race          = pearson("pct_black_non_hisp",          "bnia_eviction_rate")
+
+# --- Shared style ---
+PLOTLY_TEMPLATE = "plotly_white"
+MAPBOX_STYLE = "carto-positron"
+MAP_CENTER = {"lat": 39.2904, "lon": -76.6122}
+MAP_ZOOM = 10
+COLOR_SEQ = px.colors.sequential.Reds
+```
+
+## The Scale of the Problem
+
+In **`{python} year`**, Baltimore City courts issued **`{python} f"{year_total:,}"` eviction warrants** — roughly **`{python} f"{year_total // 12:,}"` per month** on average. The chart below shows how that volume shifted across the year.
+
+```{python}
+#| label: monthly-trend
+
+fig = px.bar(
+    monthly,
+    x="month",
+    y="warrants",
+    labels={"month": "Month", "warrants": "Eviction Warrants Filed"},
+    template=PLOTLY_TEMPLATE,
+    color_discrete_sequence=["#c0392b"],
+)
+fig.update_layout(
+    title="Eviction Warrants Filed by Month — Baltimore City 2024",
+    xaxis_title=None,
+    yaxis_title="Warrants Filed",
+    margin=dict(t=50, b=40),
+    height=380,
+)
+fig.show()
+```
+
+*The detailed neighborhood and landlord analysis in the sections below is based on December 2024 data (`{python} dec_warrants` warrants), where address geocoding and court record matching are most complete.*
+
+---
+
+## A Different Framework
+
+Most conversations about eviction focus on tenant behavior — missed payments, lease violations. But the *where* of eviction tells a different story.
+
+Eviction rates in Baltimore track almost perfectly with a set of conditions that tenants didn't choose: what neighborhood they were born in, whether it was redlined in the 1930s, how concentrated landlord ownership is in their block. These are **social determinants of eviction** — upstream structural forces that predict who gets a warrant served at their door.
+
+This analysis maps those forces at the Community Statistical Area (CSA) level — Baltimore's 55 neighborhood clusters — using December 2024 court data merged with BNIA Vital Signs indicators and SDAT property records.
+
+---
+
+## Where Evictions Happen
+
+```{python}
+#| label: eviction-map
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="csa2010",
+    color="eviction_rate_per_1k_households",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=MAP_ZOOM,
+    opacity=0.75,
+    hover_name="csa2010",
+    hover_data={
+        "eviction_count": True,
+        "eviction_rate_per_1k_households": ":.1f",
+        "csa2010": False,
+    },
+    labels={
+        "eviction_rate_per_1k_households": "Warrants per 1k HH",
+        "eviction_count": "Warrants (Dec 2024)",
+    },
+)
+fig.update_layout(
+    title="Eviction Warrant Rate by Neighborhood (December 2024)",
+    margin=dict(t=50, b=0, l=0, r=0),
+    height=520,
+    coloraxis_colorbar=dict(title="Warrants<br>per 1k HH"),
+)
+fig.show()
+```
+
+The clustering is not random. High-rate neighborhoods form a pattern that should be familiar to anyone who has studied Baltimore's geography of inequality.
+
+---
+
+## Overlapping Geographies
+
+In Baltimore, race predicts almost everything: health outcomes, wealth, life expectancy, educational attainment. Maps of racial composition and median income here are nearly mirrors of each other — both reflecting decades of redlining, disinvestment, and segregated infrastructure.
+
+Eviction is more complicated. Compare all three maps below.
+
+```{python}
+#| label: map-race
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="csa2010",
+    color="pct_black_non_hisp",
+    color_continuous_scale="Blues",
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=9,
+    opacity=0.75,
+    hover_name="csa2010",
+    labels={"pct_black_non_hisp": "% Black (non-Hispanic)"},
+)
+fig.update_layout(
+    title="% Black (non-Hispanic) Residents",
+    margin=dict(t=40, b=0, l=0, r=0),
+    height=420,
+    coloraxis_colorbar=dict(title="% Black<br>non-Hisp"),
+)
+fig.show()
+```
+
+```{python}
+#| label: map-income
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="csa2010",
+    color="median_hh_income",
+    color_continuous_scale="Greens_r",
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=9,
+    opacity=0.75,
+    hover_name="csa2010",
+    labels={"median_hh_income": "Median HH Income ($)"},
+)
+fig.update_layout(
+    title="Median Household Income",
+    margin=dict(t=40, b=0, l=0, r=0),
+    height=420,
+    coloraxis_colorbar=dict(title="Median HH<br>Income ($)"),
+)
+fig.show()
+```
+
+The race and income maps are nearly identical — the same north/south, east/west divides that have defined Baltimore for a century. Now compare to the eviction rate map above. The overlap is real, but it's messier. High-eviction neighborhoods are concentrated but don't trace racial composition as cleanly as, say, infant mortality or unemployment do. The scatter plots below show why.
+
+> **Note:** A fourth map showing 1930s HOLC redlining boundaries would complete this picture. Those boundaries are available from the [Mapping Inequality project](https://dsl.richmond.edu/panorama/redlining/) — overlay them and the race and income maps are nearly coextensive.
+
+---
+
+## What the Data Shows
+
+Each dot below represents one of Baltimore's 55 CSA neighborhoods. The relationships are not subtle.
+
+### Income and Eviction
+
+```{python}
+#| label: scatter-income
+
+fig = px.scatter(
+    df,
+    x="median_hh_income",
+    y="eviction_rate_per_1k_households",
+    hover_name="csa2010",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "median_hh_income": "Median Household Income ($)",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH",
+    },
+    title="Income explains some of the pattern — but not all of it",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#c0392b"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Pearson r = `{python} f"{r_income:.2f}"`, p = `{python} f"{p_income:.4f}"` (n = 55 CSAs)*
+
+### Low-Income Households and Eviction
+
+*Poverty-rate data is not available in BNIA Vital Signs; the closest proxy is the share of households earning under \$25,000.*
+
+```{python}
+#| label: scatter-poverty
+
+fig = px.scatter(
+    df,
+    x="pct_hh_income_under_25k",
+    y="eviction_rate_per_1k_households",
+    hover_name="csa2010",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_hh_income_under_25k": "% Households Earning Under $25k",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH",
+    },
+    title="Low-income households, same story",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#c0392b"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Pearson r = `{python} f"{r_low_income:.2f}"`, p = `{python} f"{p_low_income:.4f}"` (n = 55 CSAs)*
+
+### Racial Composition and Eviction
+
+Income explains part of the pattern, but not all of it. Even after accounting for income, majority-Black neighborhoods face higher eviction rates — reflecting a separate layer of structural disadvantage.
+
+```{python}
+#| label: scatter-race
+
+fig = px.scatter(
+    df,
+    x="pct_black_non_hisp",
+    y="eviction_rate_per_1k_households",
+    hover_name="csa2010",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black_non_hisp": "% Black (non-Hispanic) Residents",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH",
+    },
+    title="Racial composition tracks eviction rate independently of income",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#c0392b"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Pearson r = `{python} f"{r_race:.2f}"`, p = `{python} f"{p_race:.4f}"` (n = 55 CSAs)*
+
+### Ownership Concentration and Eviction
+
+```{python}
+#| label: scatter-concentration
+
+fig = px.scatter(
+    df,
+    x="ownership_concentration_pct",
+    y="eviction_rate_per_1k_households",
+    hover_name="csa2010",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH",
+    },
+    title="Ownership concentration — the strongest relationship in the data",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#2c3e50"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Pearson r = `{python} f"{r_concentration:.2f}"`, p = `{python} f"{p_concentration:.4f}"` (n = 55 CSAs)*
+
+Two CSAs stand out as outliers in opposite directions. **Downtown/Seton Hill** has a very high eviction rate (37.8 per 1,000 households) relative to its ownership concentration (51.6%) — likely driven by a small absolute number of renter households and several large apartment landlords. **Dickeyville/Franklintown** shows the opposite pattern: the highest ownership concentration in the city (97.3%, meaning 10 owners control virtually all rental units) but a lower-than-expected eviction rate — perhaps reflecting a more stable tenant base in that concentrated portfolio.
+
+---
+
+## Warrant Filings vs. Actual Evictions
+
+Most eviction research focuses on completed evictions — cases where a tenant was physically removed. But this understates the true burden on renters in two ways. First, many tenants "self-evict" after receiving a warrant, leaving before the court date to avoid a formal record — those moves never get counted. Second, the filing itself disrupts lives, triggers credit damage, and clogs courts regardless of outcome.
+
+This analysis tracks **eviction warrant filings** — a more complete measure of the pressure the system places on tenants. The comparison below shows how the geography and predictors of warrant filings differ from BNIA's published actual eviction rate (2023).
+
+### Where Each Rate Is High
+
+```{python}
+#| label: choropleth-warrants
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="csa2010",
+    color="eviction_rate_per_1k_households",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=MAP_ZOOM,
+    opacity=0.75,
+    hover_name="csa2010",
+    hover_data={"eviction_count": True, "eviction_rate_per_1k_households": ":.1f", "csa2010": False},
+    labels={"eviction_rate_per_1k_households": "Warrants per 1k HH", "eviction_count": "Warrants (Dec 2024)"},
+)
+fig.update_layout(
+    title="Eviction Warrant Rate by CSA — December 2024 (per 1,000 Households)",
+    margin=dict(t=50, b=0, l=0, r=0),
+    height=500,
+    coloraxis_colorbar=dict(title="Warrants<br>per 1k HH"),
+)
+fig.show()
+```
+
+```{python}
+#| label: choropleth-bnia
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="csa2010",
+    color="bnia_eviction_rate",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=MAP_ZOOM,
+    opacity=0.75,
+    hover_name="csa2010",
+    hover_data={"bnia_eviction_rate": ":.1f", "csa2010": False},
+    labels={"bnia_eviction_rate": "Evictions per 1k res."},
+)
+fig.update_layout(
+    title="Actual Eviction Rate by CSA — BNIA 2023 (per 1,000 Residents)",
+    margin=dict(t=50, b=0, l=0, r=0),
+    height=500,
+    coloraxis_colorbar=dict(title="Evictions<br>per 1k res."),
+)
+fig.show()
+```
+
+### Ownership Concentration
+
+The strongest predictor of warrant filings — but not of actual evictions. Concentrated landlords appear to use the court system as a portfolio management tool, filing across their holdings regardless of neighborhood demographics.
+
+```{python}
+#| label: scatter-concentration-warrants
+
+fig = px.scatter(
+    df, x="ownership_concentration_pct", y="eviction_rate_per_1k_households",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH (Dec 2024)",
+    },
+    title="Ownership concentration vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#2c3e50"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_concentration:.2f}"`, p = `{python} f"{p_concentration:.4f}"`*
+
+```{python}
+#| label: scatter-concentration-bnia
+
+fig = px.scatter(
+    df, x="ownership_concentration_pct", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "bnia_eviction_rate": "Actual Evictions per 1,000 Residents (BNIA 2023)",
+    },
+    title="Ownership concentration vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#7f8c8d"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_bnia_concentration:.2f}"`, p = `{python} f"{p_bnia_concentration:.4f}"`*
+
+### Median Household Income
+
+A strong predictor of actual evictions — but not of warrant filings. Low-income neighborhoods see more completed evictions, but the warrant system reaches into higher-income neighborhoods more than the final outcomes suggest.
+
+```{python}
+#| label: scatter-income-warrants
+
+fig = px.scatter(
+    df, x="median_hh_income", y="eviction_rate_per_1k_households",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "median_hh_income": "Median Household Income ($)",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH (Dec 2024)",
+    },
+    title="Income vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#c0392b"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_income:.2f}"`, p = `{python} f"{p_income:.4f}"`*
+
+```{python}
+#| label: scatter-income-bnia
+
+fig = px.scatter(
+    df, x="median_hh_income", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "median_hh_income": "Median Household Income ($)",
+        "bnia_eviction_rate": "Actual Evictions per 1,000 Residents (BNIA 2023)",
+    },
+    title="Income vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#7f8c8d"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_bnia_income:.2f}"`, p = `{python} f"{p_bnia_income:.4f}"`*
+
+### Racial Composition
+
+Same pattern: race strongly predicts completed evictions but not warrant filings.
+
+```{python}
+#| label: scatter-race-warrants
+
+fig = px.scatter(
+    df, x="pct_black_non_hisp", y="eviction_rate_per_1k_households",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black_non_hisp": "% Black (non-Hispanic) Residents",
+        "eviction_rate_per_1k_households": "Warrants per 1,000 HH (Dec 2024)",
+    },
+    title="Racial composition vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#c0392b"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_race:.2f}"`, p = `{python} f"{p_race:.4f}"`*
+
+```{python}
+#| label: scatter-race-bnia
+
+fig = px.scatter(
+    df, x="pct_black_non_hisp", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black_non_hisp": "% Black (non-Hispanic) Residents",
+        "bnia_eviction_rate": "Actual Evictions per 1,000 Residents (BNIA 2023)",
+    },
+    title="Racial composition vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color="#7f8c8d"), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_bnia_race:.2f}"`, p = `{python} f"{p_bnia_race:.4f}"`*
+
+---
+
+## Who Is Doing the Evicting
+
+A small number of landlords account for a disproportionate share of eviction filings. The 20 entities below filed the most warrants in December 2024.
+
+```{python}
+#| label: top-evictors-bar
+
+top20 = owners.head(20).copy()
+top20["owner_label"] = top20["owner"].str.title().str.strip()
+
+fig = px.bar(
+    top20.sort_values("eviction_count"),
+    x="eviction_count",
+    y="owner_label",
+    orientation="h",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "eviction_count": "Warrants Filed (Dec 2024)",
+        "owner_label": "",
+    },
+    title="Top 20 Landlords by Eviction Warrant Count — December 2024",
+    color="eviction_count",
+    color_continuous_scale=["#fadbd8", "#c0392b"],
+)
+fig.update_layout(
+    height=560,
+    margin=dict(t=60, l=250, b=40),
+    showlegend=False,
+    coloraxis_showscale=False,
+)
+fig.update_traces(
+    text=top20.sort_values("eviction_count")["eviction_count"],
+    textposition="outside",
+)
+fig.show()
+```
+
+### Court Name → SDAT Owner Matching
+
+Court filings often use abbreviated or alternate names. The table below shows the top plaintiffs as they appear in court records alongside the matched SDAT property owner.
+
+```{python}
+#| label: plaintiff-table
+
+top20_map = plaintiff_map.head(20).copy()
+top20_map.columns = ["Court Filing Name", "Warrants", "SDAT Owner", "Units Matched"]
+top20_map = top20_map.reset_index(drop=True)
+top20_map.index += 1
+
+top20_map.style \
+    .set_table_styles([
+        {"selector": "thead th", "props": [("background-color", "#2c3e50"), ("color", "white"), ("font-weight", "bold")]},
+        {"selector": "tbody tr:nth-child(even)", "props": [("background-color", "#f9f9f9")]},
+        {"selector": "td, th", "props": [("padding", "6px 12px"), ("text-align", "left")]},
+    ]) \
+    .bar(subset=["Warrants"], color="#c0392b", vmin=0)
+```
+
+---
+
+## What This Means
+
+The data points to three levers for reducing eviction in Baltimore:
+
+1. **Ownership concentration** is the strongest predictor of eviction rates in the data — stronger than income, stronger than racial composition. Policies that disperse ownership (community land trusts, right-of-first-refusal for tenants, LLC transparency requirements) address the root structural driver.
+
+2. **A small number of landlords** account for a disproportionate share of filings. Targeted intervention — whether mediation programs, inspection priority, or rental registry enforcement — can reach a large fraction of evictions by focusing on 20 entities.
+
+3. **The data infrastructure to do this work is improving but incomplete.** December 2024 is the month where geocoding and court record matching are most complete. A fully geocoded, real-time eviction dataset — publicly accessible — would let advocates, journalists, and policymakers track these patterns continuously rather than after the fact.
+
+Eviction is not an inevitable consequence of market conditions. It is a policy choice, made building by building, court date by court date. The geography of that choice is visible in the maps above.

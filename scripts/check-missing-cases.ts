@@ -12,7 +12,7 @@ import Database from "better-sqlite3";
 import { readFileSync } from "fs";
 
 const DB_PATH = "evictions.db";
-const CSV_PATH = "data/md_eviction_case_data.csv";
+const CSV_PATH = "data/md_eviction_case_data_2024.csv";
 
 function parseCSVLine(line: string): string[] {
   const fields: string[] = [];
@@ -31,6 +31,22 @@ function parseCSVLine(line: string): string[] {
   }
   fields.push(current);
   return fields;
+}
+
+// Convert dates like "12/31/2024" to "2024-12-31" for proper lexical comparison
+function normalizeDate(dateStr: string | null | undefined): string | null {
+  const trimmed = (dateStr || "").trim();
+  if (!trimmed) return null;
+
+  const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(trimmed);
+  if (!m) {
+    // Fallback: store as-is if it doesn't match the expected pattern
+    return trimmed;
+  }
+
+  const [, mm, dd, yyyy] = m;
+  const pad = (s: string) => (s.length === 1 ? `0${s}` : s);
+  return `${yyyy}-${pad(mm)}-${pad(dd)}`;
 }
 
 function main() {
@@ -76,8 +92,11 @@ function main() {
 
   const loadMany = db.transaction((rows: string[][]) => {
     for (const fields of rows) {
+      const eventDate = normalizeDate(fields[0]);
+      const evictedDate = normalizeDate(fields[10]);
+
       insertStmt.run(
-        fields[0] || null,
+        eventDate,
         fields[1] || null,
         fields[2] || null,
         fields[3] || null,
@@ -87,7 +106,7 @@ function main() {
         fields[7] || null,
         fields[8] || null,
         fields[9] || null,
-        fields[10] || null,
+        evictedDate,
         fields[11] || null,
         fields[12] || null
       );
@@ -95,8 +114,22 @@ function main() {
   });
 
   const rows = lines.slice(1).map(parseCSVLine);
-  loadMany(rows);
-  console.log(`Loaded ${rows.length} warrant filings from CSV\n`);
+
+  // De-duplicate by case_number (column index 9), keeping the first occurrence
+  const uniqueByCaseNumber = new Map<string, string[]>();
+  for (const fields of rows) {
+    const caseNumber = (fields[9] || "").trim();
+    if (!caseNumber) continue;
+    if (!uniqueByCaseNumber.has(caseNumber)) {
+      uniqueByCaseNumber.set(caseNumber, fields);
+    }
+  }
+
+  const dedupedRows = Array.from(uniqueByCaseNumber.values());
+  loadMany(dedupedRows);
+  console.log(
+    `Loaded ${dedupedRows.length} unique warrant filings from CSV (from ${rows.length} rows)\n`
+  );
 
   // Cases in CSV but not in parsed DB
   type MissingRow = {
@@ -112,6 +145,7 @@ function main() {
     FROM warrant_filings wf
     LEFT JOIN cases c ON c.case_number = wf.case_number
     WHERE c.id IS NULL
+    AND wf.event_date between '2024-12-01' and '2024-12-31'
     ORDER BY wf.case_number
   `
     )
@@ -119,7 +153,9 @@ function main() {
 
   const total = (
     db
-      .prepare("SELECT COUNT(DISTINCT case_number) as count FROM warrant_filings")
+      .prepare(
+        "SELECT COUNT(DISTINCT case_number) as count FROM warrant_filings"
+      )
       .get() as { count: number }
   ).count;
 
@@ -129,7 +165,9 @@ function main() {
 
   if (missing.length > 0) {
     missing.forEach((row) => {
-      console.log(`  ${row.case_number}  (${row.case_type}, ${row.event_date})`);
+      console.log(
+        `  ${row.case_number}  (${row.case_type}, ${row.event_date})`
+      );
     });
   }
 

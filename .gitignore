@@ -33,3 +33,5 @@ data/
 analysis/outputs/
 analysis/*.duckdb
 analysis/data/
+analysis/eviction_analysis.html
+analysis/neighborhood_analysis.html
