@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { activeMetric, METRIC_LABELS } from "../stores/dashboard";
+  import { activeMetric, selectedCsa, METRIC_LABELS } from "../stores/dashboard";
   import type { MetricKey } from "../lib/types";
 
   const metrics: MetricKey[] = [
@@ -10,27 +10,45 @@
   ];
 </script>
 
-<div class="metric-tabs" role="tablist" aria-label="Map metric">
-  {#each metrics as metric}
-    <button
-      role="tab"
-      aria-selected={$activeMetric === metric}
-      class:active={$activeMetric === metric}
-      onclick={() => activeMetric.set(metric)}
-    >
-      {METRIC_LABELS[metric]}
-    </button>
-  {/each}
+<div class="sticky-bar">
+  <div class="metric-tabs" role="tablist" aria-label="Map metric">
+    {#each metrics as metric}
+      <button
+        role="tab"
+        aria-selected={$activeMetric === metric}
+        class:active={$activeMetric === metric}
+        onclick={() => activeMetric.set(metric)}
+      >
+        {METRIC_LABELS[metric]}
+      </button>
+    {/each}
+  </div>
+
+  {#if $selectedCsa}
+    <div class="selected-csa">
+      <span class="selected-csa__label">Selected:</span>
+      <span class="selected-csa__name">{$selectedCsa}</span>
+      <button class="selected-csa__clear" onclick={() => selectedCsa.set(null)} aria-label="Clear selection">
+        ✕
+      </button>
+    </div>
+  {/if}
 </div>
 
 <style>
+  .sticky-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-6);
+    flex-wrap: wrap;
+  }
+
   .metric-tabs {
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
-    padding: var(--space-4) var(--space-6);
-    border-bottom: 1px solid var(--color-border);
-    background: var(--color-surface);
+    flex: 1;
   }
 
   button {
@@ -60,5 +78,37 @@
     border-color: var(--color-amber-500);
     color: white;
     font-weight: var(--font-weight-semibold);
+  }
+
+  .selected-csa {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .selected-csa__label {
+    color: var(--color-text-muted);
+  }
+
+  .selected-csa__name {
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-heading);
+  }
+
+  .selected-csa__clear {
+    padding: 2px var(--space-2);
+    font-size: var(--text-xs);
+    border-color: var(--color-border-subtle);
+    color: var(--color-text-muted);
+    background: transparent;
+  }
+
+  .selected-csa__clear:hover {
+    background: var(--color-surface-alt);
+    border-color: var(--color-border);
+    color: var(--color-text-primary);
   }
 </style>

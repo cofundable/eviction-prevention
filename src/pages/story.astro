@@ -3,16 +3,18 @@ export const prerender = true;
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Scatterplot from "../components/Scatterplot.svelte";
 import BarChart from "../components/BarChart.svelte";
+import LandlordCharts from "../components/LandlordCharts.svelte";
 
 // Fetch data at build time
 let csaFeatures: Record<string, unknown>[] = [];
-let monthlyCounts: Record<string, unknown>[] = [];
+let landlordTop20: { plaintiff: string; evictions: number; not_evicted: number; total: number }[] = [];
+let concentrationData: { tier: string; pct: number; color: string }[] = [];
+
 try {
-  // During build these will be served from the dev server or be empty
-  // In production, pages/api/* run at request time so we skip build-time fetch
-  // and instead inline the data from analysis/outputs/csa_features.csv
   const fs = await import("fs");
   const path = await import("path");
+
+  // CSA features for scatterplots
   const csvPath = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
   if (fs.existsSync(csvPath)) {
     const lines = fs.readFileSync(csvPath, "utf-8").trim().split("\n");
@@ -24,8 +26,64 @@ try {
       );
     });
   }
+
+  // landlord_master.csv — plaintiff + matched SDAT owner + warrant/eviction counts
+  // Group by sdat_owner where matched, otherwise by plaintiff, to get one row per entity.
+  const masterPath = path.resolve(process.cwd(), "public/downloads/landlord_master.csv");
+  if (fs.existsSync(masterPath)) {
+    const lines = fs.readFileSync(masterPath, "utf-8").trim().split("\n").slice(1);
+    // CSV fields: plaintiff,sdat_owner,total_warrants,total_evictions,warrants_matched_to_sdat,csa_count,csas_active
+    const parsed = lines.map((line) => {
+      const parts = line.match(/("(?:[^"]|"")*"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) ?? line.split(",");
+      const clean = (s: string) => s.replace(/^"|"$/g, "").replace(/""/g, '"').trim();
+      return {
+        plaintiff: clean(parts[0] ?? ""),
+        sdat_owner: clean(parts[1] ?? ""),
+        total_warrants: Number(parts[2] ?? 0),
+        total_evictions: Number(parts[3] ?? 0),
+      };
+    }).filter(r => r.total_warrants > 0);
+
+    // Merge rows that share the same SDAT owner
+    const entityMap = new Map<string, { label: string; total_warrants: number; total_evictions: number }>();
+    for (const r of parsed) {
+      const key = r.sdat_owner || r.plaintiff;
+      const label = r.sdat_owner
+        ? r.sdat_owner.replace(/\s+/g, " ").trim()
+        : r.plaintiff;
+      const existing = entityMap.get(key);
+      if (existing) {
+        existing.total_warrants += r.total_warrants;
+        existing.total_evictions += r.total_evictions;
+      } else {
+        entityMap.set(key, { label, total_warrants: r.total_warrants, total_evictions: r.total_evictions });
+      }
+    }
+
+    const all = [...entityMap.values()].sort((a, b) => b.total_warrants - a.total_warrants);
+
+    landlordTop20 = all.slice(0, 20).map((r) => ({
+      plaintiff: r.label,
+      evictions: r.total_evictions,
+      not_evicted: r.total_warrants - r.total_evictions,
+      total: r.total_warrants,
+    }));
+
+    const grandTotal = all.reduce((s, r) => s + r.total_warrants, 0);
+    const pct = (n: number) => Math.round((n / grandTotal) * 100);
+    const top3   = all.slice(0, 3).reduce((s, r) => s + r.total_warrants, 0);
+    const next17 = all.slice(3, 20).reduce((s, r) => s + r.total_warrants, 0);
+    const next80 = all.slice(20, 100).reduce((s, r) => s + r.total_warrants, 0);
+    const rest   = all.slice(100).reduce((s, r) => s + r.total_warrants, 0);
+    concentrationData = [
+      { tier: "Top 3",        pct: pct(top3),   color: "#b88500" },
+      { tier: "4th–20th",     pct: pct(next17),  color: "#d4a843" },
+      { tier: "21st–100th",   pct: pct(next80),  color: "#e6ce8e" },
+      { tier: `Remaining ${all.slice(100).length}`, pct: pct(rest), color: "#f5edda" },
+    ];
+  }
 } catch {
-  // Silently skip if file not available during build
+  // Silently skip if files not available during build
 }
 ---
 
@@ -230,24 +288,22 @@ try {
 
     <!-- 8. Who — landlord concentration -->
     <section class="story__section">
-      <div class="container container--prose">
+      <div class="container">
         <h2>Who files the most warrants?</h2>
-        <p>
-          The top 3 landlords account for 10% of all December 2024 warrants.
-          The top 100 account for 54%. The remaining 963 landlords split the
-          other 46%.
+        <p class="section-intro">
+          A handful of landlords are responsible for a <strong>disproportionate</strong>
+          share of filings — and few of those warrants result in formal evictions.
         </p>
-        <p>
-          Waverly Preservation LLC filed 102 warrants — the most of any single
-          landlord — while executing just 1 eviction (1%). They control roughly
-          310 units and 33% of all rental units in their CSA. The warrant is
-          being used as leverage, not as a path to actual displacement.
-        </p>
+        <LandlordCharts
+          client:visible
+          concentrationData={concentrationData}
+          top20Data={landlordTop20}
+        />
       </div>
     </section>
 
     <!-- 9. Accountability asymmetry -->
-    <section class="story__section story__section--warm">
+    <section class="story__section story__section--dark">
       <div class="container container--prose">
         <h2>An asymmetry in consequences</h2>
         <div class="comparison">
@@ -403,7 +459,8 @@ try {
     font-size: var(--text-lg);
     margin-bottom: var(--space-4);
     padding-bottom: var(--space-3);
-    border-bottom: 2px solid var(--color-border);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+    color: var(--color-text-on-dark);
   }
 
   .comparison__col ul {
@@ -416,6 +473,7 @@ try {
   .comparison__col li {
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
+    color: rgba(255, 255, 255, 0.85);
   }
 
   .cta-row {

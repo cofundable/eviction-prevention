@@ -1,5 +1,6 @@
 import { atom, computed } from "nanostores";
 import type { CsaFeature, LandlordRow, MetricKey } from "../lib/types";
+import { toSlug } from "../lib/utils";
 
 /** Currently selected CSA name (null = nothing selected) */
 export const selectedCsa = atom<string | null>(null);
@@ -20,6 +21,11 @@ export const selectedCsaLandlords = atom<LandlordRow[]>([]);
 export const selectedCsaData = computed(
   [selectedCsa, csaFeatures],
   (csa, features) => features.find((f) => f.csa === csa) ?? null
+);
+
+/** Derived: URL slug for the currently selected CSA */
+export const selectedCsaSlug = computed(selectedCsa, (csa) =>
+  csa ? toSlug(csa) : null
 );
 
 export const METRIC_LABELS: Record<MetricKey, string> = {

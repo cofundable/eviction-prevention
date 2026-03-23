@@ -26,12 +26,18 @@
   let tooltip: HTMLDivElement;
   let MapLibre: typeof import("maplibre-gl");
 
+  // Metrics where a higher value = better outcome → invert scale (dark = bad)
+  const INVERTED_METRICS: Partial<Record<MetricKey, true>> = {
+    median_hh_income: true,
+  };
+
   function getColorStops(features: CsaFeature[], metric: MetricKey) {
     const vals = features.map((f) => f[metric] as number).filter((v) => !isNaN(v));
     if (!vals.length) return [];
     const min = Math.min(...vals);
     const max = Math.max(...vals);
-    return SCALE.map((color, i) => [min + (i / (SCALE.length - 1)) * (max - min), color]).flat();
+    const scale = INVERTED_METRICS[metric] ? [...SCALE].reverse() : SCALE;
+    return scale.map((color, i) => [min + (i / (scale.length - 1)) * (max - min), color]).flat();
   }
 
   function buildPaint(features: CsaFeature[], metric: MetricKey) {
@@ -62,6 +68,13 @@
       center: [-76.6122, 39.2904],
       zoom: 11,
       attributionControl: false,
+      scrollZoom: false,
+      boxZoom: false,
+      dragRotate: false,
+      dragPan: false,
+      keyboard: false,
+      doubleClickZoom: false,
+      touchZoomRotate: false,
     });
 
     map.on("load", async () => {

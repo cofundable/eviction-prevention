@@ -26,9 +26,9 @@ import BaseLayout from "../layouts/BaseLayout.astro";
             <h3>CSA Features</h3>
           </div>
           <p>
-            One row per Community Statistical Area. Includes eviction rates,
-            demographic indicators, ownership concentration metrics, and income
-            data. 55 rows.
+            One row per Community Statistical Area (55 rows). Eviction warrant
+            rate, BNIA eviction rate, ownership concentration, racial
+            composition, median household income, and unemployment rate.
           </p>
           <a href="/downloads/csa_features.csv" class="download-btn">
             Download csa_features.csv
@@ -43,7 +43,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <p>
             One row per December 2024 eviction warrant. Plaintiff name,
             truncated address, CSA, case type, judgment, and eviction status.
-            Tenant names removed.
+            Tenant names removed; addresses truncated to street + zip.
           </p>
           <a href="/downloads/cases_sanitized.csv" class="download-btn">
             Download cases_sanitized.csv
@@ -53,17 +53,69 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         <div class="download-card">
           <div class="download-card__meta">
             <span class="download-card__label">CSV</span>
-            <h3>Landlord Summary</h3>
+            <h3>Landlord Master</h3>
           </div>
           <p>
-            One row per landlord. Total warrants filed, evictions executed, and
-            CSAs active in during December 2024. 1,063 landlords.
+            One row per court plaintiff. Includes the matched SDAT property
+            owner (resolved via spatial join to parcel data), total warrants
+            filed, evictions executed, and how many warrants were matched to
+            a parcel. Source for all landlord charts on this site.
           </p>
-          <a href="/downloads/landlord_summary.csv" class="download-btn">
-            Download landlord_summary.csv
+          <a href="/downloads/landlord_master.csv" class="download-btn">
+            Download landlord_master.csv
           </a>
         </div>
       </div>
+    </section>
+
+    <section class="section">
+      <h2>Methodology</h2>
+
+      <h3 class="method-heading">Data sources</h3>
+      <ul class="method-list">
+        <li>
+          <strong>Warrant filings</strong> — case numbers were identified via
+          the <a href="https://app.powerbigov.us/view?r=eyJrIjoiMmYyNWMyMGItOTg5My00Y2ZiLTg4ZjctNmM2MjE2ZmZhZWZiIiwidCI6IjdkM2I4ZDAwLWY5YmUtNDZlNy05NDYwLTRlZjJkOGY3MzE0OSJ9" target="_blank" rel="noopener">Maryland Eviction Dashboard</a>,
+          then individual case records were downloaded from Maryland Case Search
+          (District Court, Baltimore City, December 2024). Each row is one
+          warrant of restitution request.
+        </li>
+        <li>
+          <strong>Eviction execution</strong> — identified by a
+          "Warrant of Restitution — Return of Service — Evicted" docket entry
+          on the same case.
+        </li>
+        <li>
+          <strong>SDAT parcel data</strong> — Maryland State Department of
+          Assessments and Taxation real property file. Used to resolve court
+          plaintiff names to deed-of-record property owners.
+        </li>
+        <li>
+          <strong>Demographic indicators</strong> — BNIA Vital Signs 2023.
+          Eviction rate, racial composition, income, and unemployment by
+          Community Statistical Area.
+        </li>
+      </ul>
+
+      <h3 class="method-heading">Landlord identity resolution</h3>
+      <p class="method-text">
+        The same landlord often files under different LLC names or management
+        company names. To deduplicate, each warrant's geocoded tenant address
+        was spatially joined (nearest-neighbour, ≤ 50 m) to SDAT rental
+        parcels. The deed-of-record owner (<code>sdat_owner</code>) is the
+        dominant parcel match across all of a plaintiff's warrants.
+        <code>landlord_master.csv</code> carries both the court name and the
+        resolved SDAT owner so you can group either way.
+      </p>
+
+      <h3 class="method-heading">CSA assignment</h3>
+      <p class="method-text">
+        Each warrant is assigned to a Community Statistical Area via the
+        tenant address census tract, using the Maryland Census
+        tract-to-CSA 2010 crosswalk. Warrants where geocoding failed or no
+        crosswalk match existed (~4%) are excluded from CSA-level analysis
+        but included in citywide totals.
+      </p>
     </section>
 
     <section class="section">
@@ -352,6 +404,36 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     font-family: monospace;
     background: none;
     padding: 0;
+  }
+
+  /* Methodology */
+  .method-heading {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-semibold);
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-3);
+  }
+
+  .method-text {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    max-width: var(--max-width-prose);
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-loose);
+  }
+
+  .method-list {
+    padding-left: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    max-width: var(--max-width-prose);
+  }
+
+  .method-list li {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-normal);
   }
 
   /* Privacy */

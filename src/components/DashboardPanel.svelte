@@ -3,19 +3,20 @@
     selectedCsa,
     selectedCsaData,
     selectedCsaLandlords,
+    selectedCsaSlug,
   } from "../stores/dashboard";
   import type { LandlordRow } from "../lib/types";
 
   let loadingLandlords = false;
 
-  selectedCsa.subscribe(async (csa) => {
-    if (!csa) {
+  selectedCsaSlug.subscribe(async (slug) => {
+    if (!slug) {
       selectedCsaLandlords.set([]);
       return;
     }
     loadingLandlords = true;
     try {
-      const res = await fetch(`/api/csa/${encodeURIComponent(csa)}`);
+      const res = await fetch(`/api/csa/${slug}`);
       const data = await res.json();
       selectedCsaLandlords.set(data.top_landlords ?? []);
     } finally {
@@ -104,22 +105,16 @@
 
 <style>
   .panel {
-    height: 100%;
-    overflow-y: auto;
-    padding: var(--space-6);
-    background: var(--color-surface);
-    border-left: 1px solid var(--color-border);
+    width: 100%;
   }
 
   .panel__empty {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    min-height: 200px;
+    padding: var(--space-12);
     color: var(--color-text-muted);
     font-size: var(--text-sm);
     text-align: center;
+    border: 1px dashed var(--color-border);
+    border-radius: var(--border-radius-md);
   }
 
   .panel__title {
@@ -131,9 +126,15 @@
 
   .metrics-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--space-4);
     margin-bottom: var(--space-8);
+  }
+
+  @media (max-width: 700px) {
+    .metrics-grid {
+      grid-template-columns: 1fr 1fr;
+    }
   }
 
   .metric-tile {
