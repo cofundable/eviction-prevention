@@ -27,7 +27,7 @@ pnpm-debug.log*
 .idea/
 
 # local data files
-data/
+/data/
 *.db
 
 # analysis pipeline outputs and inputs

@@ -10,6 +10,7 @@ dist/
 # Data pipeline
 analysis/
 extension/
+public/data/
 
 # Test mocks (preserve original formatting)
 __tests__/mocks/
