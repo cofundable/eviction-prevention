@@ -29,10 +29,33 @@ const fullTitle =
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   </head>
   <body>
+    <a href="#main" class="skip-link">Skip to main content</a>
     <Nav />
-    <main>
+    <main id="main" tabindex="-1">
       <slot />
     </main>
     <Footer />
   </body>
 </html>
+
+<style is:global>
+  .skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: var(--space-4);
+    z-index: 9999;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-amber-500);
+    color: var(--color-brown-900);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-sm);
+    border-radius: var(--border-radius-sm);
+    text-decoration: none;
+    transform: translateY(-200%);
+    transition: transform 0.15s ease;
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+</style>
