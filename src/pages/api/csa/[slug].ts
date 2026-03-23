@@ -1,3 +1,4 @@
+export const prerender = false;
 import type { APIRoute } from "astro";
 import { getCsaDetail, getCsaFeatures } from "../../../lib/db";
 import { toSlug } from "../../../lib/utils";
