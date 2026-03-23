@@ -1,0 +1,91 @@
+---
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import MetricTabs from "../components/MetricTabs.svelte";
+import ChoroplethMap from "../components/ChoroplethMap.svelte";
+import DashboardPanel from "../components/DashboardPanel.svelte";
+---
+
+<BaseLayout
+  title="Dashboard"
+  description="Explore eviction warrant data across Baltimore's 55 Community Statistical Areas."
+>
+  <div class="dashboard">
+    <header class="dashboard__header container">
+      <h1>Neighborhood Dashboard</h1>
+      <p>
+        Explore eviction warrant rates, income, racial composition, and
+        ownership concentration across Baltimore's 55 Community Statistical
+        Areas. Click any neighborhood to see details.
+      </p>
+    </header>
+
+    <MetricTabs client:load />
+
+    <div class="dashboard__body">
+      <div class="dashboard__map">
+        <ChoroplethMap client:load />
+      </div>
+      <div class="dashboard__panel">
+        <DashboardPanel client:load />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 56px); /* subtract nav height */
+  }
+
+  .dashboard__header {
+    padding-block: var(--space-6);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .dashboard__header h1 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .dashboard__header p {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    max-width: none;
+  }
+
+  .dashboard__body {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .dashboard__map {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .dashboard__panel {
+    overflow-y: auto;
+    border-left: 1px solid var(--color-border);
+  }
+
+  @media (max-width: 900px) {
+    .dashboard {
+      height: auto;
+    }
+    .dashboard__body {
+      grid-template-columns: 1fr;
+    }
+    .dashboard__map {
+      height: 400px;
+    }
+    .dashboard__panel {
+      border-left: none;
+      border-top: 1px solid var(--color-border);
+    }
+  }
+</style>

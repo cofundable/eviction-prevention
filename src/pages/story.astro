@@ -1,0 +1,454 @@
+---
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Scatterplot from "../components/Scatterplot.svelte";
+import BarChart from "../components/BarChart.svelte";
+
+// Fetch data at build time
+let csaFeatures: Record<string, unknown>[] = [];
+let monthlyCounts: Record<string, unknown>[] = [];
+try {
+  // During build these will be served from the dev server or be empty
+  // In production, pages/api/* run at request time so we skip build-time fetch
+  // and instead inline the data from analysis/outputs/csa_features.csv
+  const fs = await import("fs");
+  const path = await import("path");
+  const csvPath = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
+  if (fs.existsSync(csvPath)) {
+    const lines = fs.readFileSync(csvPath, "utf-8").trim().split("\n");
+    const headers = lines[0].split(",");
+    csaFeatures = lines.slice(1).map((line) => {
+      const vals = line.split(",");
+      return Object.fromEntries(
+        headers.map((h, i) => [h.trim(), isNaN(Number(vals[i])) ? vals[i] : Number(vals[i])])
+      );
+    });
+  }
+} catch {
+  // Silently skip if file not available during build
+}
+---
+
+<BaseLayout
+  title="Findings"
+  description="A data-driven analysis of who gets evicted in Baltimore and who's doing the evicting."
+>
+  <article class="story">
+    <!-- 1. Hook -->
+    <section class="story__section story__section--dark">
+      <div class="container container--prose">
+        <div class="display-stat">3,000+</div>
+        <h1>The Social Determinants of Eviction</h1>
+        <p class="lead">
+          In a single month — December 2024 — Baltimore landlords filed more
+          than 3,000 eviction warrants. That's roughly one in every 83
+          households. But most of those warrants never resulted in an actual
+          eviction.
+        </p>
+      </div>
+    </section>
+
+    <!-- 2. Framing -->
+    <section class="story__section">
+      <div class="container container--prose">
+        <h2>The social determinants of health — applied to housing</h2>
+        <p>
+          Public health has long recognized that health outcomes are shaped by
+          social and structural factors — income, race, neighborhood — more than
+          individual behavior. We applied the same lens to eviction.
+        </p>
+        <p>
+          What we found was surprising: <strong>
+            which factors matter depends entirely on how you measure eviction.
+          </strong> Warrant filings and actual evictions tell completely different
+          stories.
+        </p>
+      </div>
+    </section>
+
+    <!-- 3. Process explainer -->
+    <section class="story__section story__section--warm">
+      <div class="container container--prose">
+        <h2>The 4-step eviction process in Maryland</h2>
+        <ol class="process-steps">
+          <li>
+            <strong>Filing</strong> — Landlord files a complaint with the District
+            Court
+          </li>
+          <li>
+            <strong>Hearing</strong> — Judge issues a judgment (usually possession)
+          </li>
+          <li>
+            <strong>Warrant</strong> — If tenant doesn't comply, landlord requests
+            a warrant of restitution
+          </li>
+          <li>
+            <strong>Execution</strong> — Sheriff executes the warrant — the formal
+            eviction
+          </li>
+        </ol>
+        <p>
+          Our data covers step 3. Fewer than 10% of warrants reach step 4.
+          That gap is the central story.
+        </p>
+      </div>
+    </section>
+
+    <!-- 4. Where — maps -->
+    <section class="story__section">
+      <div class="container">
+        <h2>Where are eviction warrants filed?</h2>
+        <p class="section-intro">
+          The geographic distribution of warrant filings doesn't map neatly onto
+          the "Black Butterfly / White L" pattern that characterizes most
+          inequities in Baltimore. That's the first hint that something
+          different is going on.
+        </p>
+        <p class="section-note">
+          See the <a href="/dashboard">interactive map</a> to explore by neighborhood.
+        </p>
+      </div>
+    </section>
+
+    <!-- 5. Which factors — BNIA correlations (setup) -->
+    <section class="story__section story__section--warm">
+      <div class="container">
+        <h2>When we look at <em>actual</em> evictions, the pattern is familiar</h2>
+        <p class="section-intro">
+          BNIA's 2023 eviction data — which tracks formal evictions, not warrant
+          filings — shows the expected correlations. Higher Black population and
+          lower income strongly predict eviction rates.
+        </p>
+        <div class="chart-pair">
+          <div class="chart-col">
+            <Scatterplot
+              client:visible
+              data={csaFeatures}
+              xField="pct_black_non_hisp"
+              yField="eviction_rate_per_1k_residents"
+              xLabel="% Black, non-Hispanic"
+              yLabel="BNIA eviction rate (per 1k)"
+              rValue={0.57}
+              pValue={0.0001}
+              title="Race vs. BNIA eviction rate"
+              color="var(--color-chart-scatter-bnia)"
+            />
+          </div>
+          <div class="chart-col">
+            <Scatterplot
+              client:visible
+              data={csaFeatures}
+              xField="median_hh_income"
+              yField="eviction_rate_per_1k_residents"
+              xLabel="Median household income"
+              yLabel="BNIA eviction rate (per 1k)"
+              rValue={-0.62}
+              pValue={0.0001}
+              title="Income vs. BNIA eviction rate"
+              color="var(--color-chart-scatter-bnia)"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. Which factors — warrant correlations (twist) -->
+    <section class="story__section">
+      <div class="container">
+        <h2>But warrant filings tell a completely different story</h2>
+        <p class="section-intro">
+          When we swap BNIA evictions for our warrant filing rate, the
+          correlations collapse. Race and income are no longer significant
+          predictors.
+        </p>
+        <div class="chart-pair">
+          <div class="chart-col">
+            <Scatterplot
+              client:visible
+              data={csaFeatures}
+              xField="pct_black_non_hisp"
+              yField="eviction_rate_per_1k_residents"
+              xLabel="% Black, non-Hispanic"
+              yLabel="Warrant rate (per 1k residents)"
+              rValue={0.16}
+              pValue={0.248}
+              title="Race vs. warrant filing rate"
+              color="var(--color-chart-warrant)"
+            />
+          </div>
+          <div class="chart-col">
+            <Scatterplot
+              client:visible
+              data={csaFeatures}
+              xField="median_hh_income"
+              yField="eviction_rate_per_1k_residents"
+              xLabel="Median household income"
+              yLabel="Warrant rate (per 1k residents)"
+              rValue={-0.21}
+              pValue={0.122}
+              title="Income vs. warrant filing rate"
+              color="var(--color-chart-warrant)"
+            />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7. Punchline — ownership concentration -->
+    <section class="story__section story__section--warm">
+      <div class="container">
+        <h2>The strongest predictor: who owns the buildings</h2>
+        <p class="section-intro">
+          The only factor that significantly predicts warrant filing rates is
+          ownership concentration — the share of rental units controlled by the
+          top 10 landlords in each neighborhood.
+        </p>
+        <div class="chart-single">
+          <Scatterplot
+            client:visible
+            data={csaFeatures}
+            xField="ownership_concentration_pct"
+            yField="eviction_rate_per_1k_residents"
+            xLabel="Top-10 owner share of rental units (%)"
+            yLabel="Warrant rate (per 1k residents)"
+            rValue={0.45}
+            pValue={0.001}
+            title="Ownership concentration vs. warrant filing rate"
+            color="var(--color-chart-warrant)"
+          />
+        </div>
+        <div class="callout">
+          <p>
+            <strong>Even with a single month of data, our eviction measure
+            and BNIA's tell the same story:</strong> income and race predict
+            formally recorded evictions, but not warrant filings — where
+            ownership concentration dominates instead.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8. Who — landlord concentration -->
+    <section class="story__section">
+      <div class="container container--prose">
+        <h2>Who files the most warrants?</h2>
+        <p>
+          The top 3 landlords account for 10% of all December 2024 warrants.
+          The top 100 account for 54%. The remaining 963 landlords split the
+          other 46%.
+        </p>
+        <p>
+          Waverly Preservation LLC filed 102 warrants — the most of any single
+          landlord — while executing just 1 eviction (1%). They control roughly
+          310 units and 33% of all rental units in their CSA. The warrant is
+          being used as leverage, not as a path to actual displacement.
+        </p>
+      </div>
+    </section>
+
+    <!-- 9. Accountability asymmetry -->
+    <section class="story__section story__section--warm">
+      <div class="container container--prose">
+        <h2>An asymmetry in consequences</h2>
+        <div class="comparison">
+          <div class="comparison__col">
+            <h3>For tenants</h3>
+            <ul>
+              <li>Eviction record follows them for years</li>
+              <li>Barriers to future rental applications</li>
+              <li>Court appearance required or default judgment</li>
+              <li>Potential wage garnishment</li>
+            </ul>
+          </div>
+          <div class="comparison__col">
+            <h3>For landlords</h3>
+            <ul>
+              <li>No penalty for filing and then withdrawing</li>
+              <li>Filing cost: ~$46 per case</li>
+              <li>Warrant can be used as leverage for rent payment</li>
+              <li>High-volume filers face no public accountability</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 10. CTA -->
+    <section class="story__section story__section--dark">
+      <div class="container container--prose" style="text-align:center">
+        <h2>Explore the data yourself</h2>
+        <p>
+          The dataset is available for download and via a documented API.
+          All tenant names are removed; addresses are truncated.
+        </p>
+        <div class="cta-row">
+          <a href="/dashboard" class="btn btn--amber">Explore the map</a>
+          <a href="/data" class="btn btn--outline">Download the data</a>
+        </div>
+      </div>
+    </section>
+  </article>
+</BaseLayout>
+
+<style>
+  .story__section {
+    padding-block: var(--space-16);
+  }
+
+  .story__section--dark {
+    background: var(--color-brown-700);
+    color: var(--color-text-on-dark);
+  }
+
+  .story__section--dark h1,
+  .story__section--dark h2 {
+    color: var(--color-text-on-dark);
+  }
+
+  .story__section--dark p {
+    color: rgba(255, 255, 255, 0.85);
+  }
+
+  .story__section--warm {
+    background: var(--color-surface-alt);
+  }
+
+  .display-stat {
+    font-size: var(--text-display);
+    font-weight: var(--font-weight-extrabold);
+    color: var(--color-amber-400);
+    line-height: 1;
+    margin-bottom: var(--space-4);
+  }
+
+  h1 {
+    font-size: var(--text-4xl);
+    margin-bottom: var(--space-6);
+  }
+
+  h2 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-6);
+  }
+
+  .lead {
+    font-size: var(--text-xl);
+    line-height: var(--leading-loose);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  p {
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-loose);
+  }
+
+  .section-intro {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-8);
+    max-width: var(--max-width-prose);
+  }
+
+  .section-note {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    max-width: none;
+  }
+
+  .chart-pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+    margin-top: var(--space-8);
+  }
+
+  .chart-single {
+    max-width: 560px;
+    margin-block: var(--space-8);
+  }
+
+  .callout {
+    background: var(--color-amber-100);
+    border-left: 4px solid var(--color-amber-500);
+    padding: var(--space-6);
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+    margin-top: var(--space-8);
+  }
+
+  .callout p {
+    max-width: none;
+    margin: 0;
+  }
+
+  .process-steps {
+    padding-left: var(--space-6);
+    margin-block: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .process-steps li {
+    line-height: var(--leading-normal);
+  }
+
+  .comparison {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-8);
+    margin-top: var(--space-6);
+  }
+
+  .comparison__col h3 {
+    font-size: var(--text-lg);
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 2px solid var(--color-border);
+  }
+
+  .comparison__col ul {
+    padding-left: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .comparison__col li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+  }
+
+  .cta-row {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    margin-top: var(--space-8);
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--border-radius-sm);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-base);
+    text-decoration: none;
+  }
+
+  .btn--amber {
+    background: var(--color-amber-500);
+    color: var(--color-brown-900);
+  }
+
+  .btn--outline {
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: var(--color-text-on-dark);
+  }
+
+  @media (max-width: 700px) {
+    .chart-pair,
+    .comparison {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

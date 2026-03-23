@@ -1,0 +1,39 @@
+---
+export const prerender = true;
+
+import Nav from "../components/Nav.astro";
+import Footer from "../components/Footer.astro";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const {
+  title,
+  description = "Analyzing who gets evicted in Baltimore — and who's doing the evicting.",
+} = Astro.props;
+const fullTitle = title === "Home"
+  ? "The Social Determinants of Eviction"
+  : `${title} — The Social Determinants of Eviction`;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content={description} />
+    <meta name="generator" content={Astro.generator} />
+    <title>{fullTitle}</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <Nav />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+  </body>
+</html>

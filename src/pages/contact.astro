@@ -1,0 +1,85 @@
+---
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import ContactForm from "../components/ContactForm.svelte";
+---
+
+<BaseLayout
+  title="Contact"
+  description="Get in touch to collaborate, report a data issue, or request access."
+>
+  <div class="container">
+    <div class="page-layout">
+      <div class="page-copy">
+        <h1>Get in touch</h1>
+        <p>
+          We welcome collaboration from researchers, journalists, housing
+          advocates, and community members. If you've spotted a data issue or
+          want to use the data in your own work, we'd love to hear from you.
+        </p>
+        <ul class="contact-options">
+          <li>
+            <strong>Collaborations</strong> — joint analysis, data partnerships, or
+            presentations
+          </li>
+          <li>
+            <strong>Data issues</strong> — incorrect records, missing data, or
+            concerns about privacy
+          </li>
+          <li>
+            <strong>Data access</strong> — raw or unredacted data requests (reviewed
+            case-by-case)
+          </li>
+        </ul>
+      </div>
+
+      <div class="page-form">
+        <ContactForm client:load />
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding-block: var(--space-16);
+  }
+
+  .page-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: var(--space-16);
+    align-items: start;
+  }
+
+  .page-copy h1 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-6);
+  }
+
+  .page-copy p {
+    color: var(--color-text-secondary);
+    line-height: var(--leading-loose);
+    margin-bottom: var(--space-6);
+    max-width: none;
+  }
+
+  .contact-options {
+    padding-left: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .contact-options li {
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--color-text-secondary);
+  }
+
+  @media (max-width: 800px) {
+    .page-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

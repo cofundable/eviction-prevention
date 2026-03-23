@@ -1,0 +1,369 @@
+---
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
+---
+
+<BaseLayout
+  title="Data & API"
+  description="Download sanitized eviction data and access the documented API."
+>
+  <div class="container">
+    <header class="page-header">
+      <h1>Data & API</h1>
+      <p>
+        All data is derived from public Maryland court records. Tenant names
+        are never published. Street addresses are truncated to street name + zip
+        code.
+      </p>
+    </header>
+
+    <section class="section">
+      <h2>Downloads</h2>
+      <div class="downloads">
+        <div class="download-card">
+          <div class="download-card__meta">
+            <span class="download-card__label">CSV</span>
+            <h3>CSA Features</h3>
+          </div>
+          <p>
+            One row per Community Statistical Area. Includes eviction rates,
+            demographic indicators, ownership concentration metrics, and income
+            data. 55 rows.
+          </p>
+          <a href="/downloads/csa_features.csv" class="download-btn">
+            Download csa_features.csv
+          </a>
+        </div>
+
+        <div class="download-card">
+          <div class="download-card__meta">
+            <span class="download-card__label">CSV</span>
+            <h3>Cases (Sanitized)</h3>
+          </div>
+          <p>
+            One row per December 2024 eviction warrant. Plaintiff name,
+            truncated address, CSA, case type, judgment, and eviction status.
+            Tenant names removed.
+          </p>
+          <a href="/downloads/cases_sanitized.csv" class="download-btn">
+            Download cases_sanitized.csv
+          </a>
+        </div>
+
+        <div class="download-card">
+          <div class="download-card__meta">
+            <span class="download-card__label">CSV</span>
+            <h3>Landlord Summary</h3>
+          </div>
+          <p>
+            One row per landlord. Total warrants filed, evictions executed, and
+            CSAs active in during December 2024. 1,063 landlords.
+          </p>
+          <a href="/downloads/landlord_summary.csv" class="download-btn">
+            Download landlord_summary.csv
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>API</h2>
+      <p class="api-note">
+        All endpoints return JSON. No authentication required. CORS headers
+        included.
+      </p>
+
+      <div class="endpoint">
+        <div class="endpoint__header">
+          <span class="method">GET</span>
+          <code class="path">/api/csa</code>
+        </div>
+        <p>Returns all 55 CSA feature rows as a flat JSON array.</p>
+        <pre class="code-block"><code>{`GET /api/csa
+
+{
+  "data": [
+    {
+      "csa": "Greenmount East",
+      "eviction_count": 87,
+      "eviction_rate_per_1k_residents": 28.1,
+      "pct_black_non_hisp": 92.3,
+      "median_hh_income": 24500,
+      "ownership_concentration_pct": 61.2,
+      ...
+    }
+  ]
+}`}</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint__header">
+          <span class="method">GET</span>
+          <code class="path">/api/csa/:name</code>
+        </div>
+        <p>
+          Single CSA with its top landlords. Name is URL-encoded (e.g.
+          <code>Greenmount%20East</code>).
+        </p>
+        <pre class="code-block"><code>{`GET /api/csa/Greenmount%20East
+
+{
+  "csa": "Greenmount East",
+  "eviction_rate_per_1k_residents": 28.1,
+  ...
+  "top_landlords": [
+    { "plaintiff": "Waverly Apts Co", "warrant_count": 12, "eviction_count": 1 }
+  ]
+}`}</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint__header">
+          <span class="method">GET</span>
+          <code class="path">/api/cases</code>
+        </div>
+        <p>
+          Paginated case list. Optional query params: <code>csa</code>,
+          <code>page</code> (default 1), <code>limit</code> (default 25, max
+          100).
+        </p>
+        <pre class="code-block"><code>{`GET /api/cases?csa=Greenmount+East&page=1
+
+{
+  "data": [
+    {
+      "case_id": "0801SP0012345",
+      "case_type": "Failure to Pay Rent",
+      "filing_date": "2024-12-03",
+      "plaintiff": "Waverly Apts Co",
+      "address": "E 25th St 21218",
+      "csa": "Greenmount East",
+      "judgment": "Possession",
+      "eviction_executed": false,
+      "defendant_hash": "a3f7c2d1..."
+    }
+  ],
+  "pagination": { "page": 1, "limit": 25, "total": 87 }
+}`}</code></pre>
+      </div>
+
+      <div class="endpoint">
+        <div class="endpoint__header">
+          <span class="method">GET</span>
+          <code class="path">/api/cases/:case_id</code>
+        </div>
+        <p>Single case with full nested court record details.</p>
+        <pre class="code-block"><code>{`GET /api/cases/0801SP0012345
+
+{
+  "case_id": "0801SP0012345",
+  ...
+  "details": {
+    "parties": [
+      { "role": "Plaintiff", "name": "Waverly Apts Co" },
+      { "role": "Defendant", "name": "[REDACTED:a3f7c2d1...]" }
+    ],
+    "docket_entries": [ ... ],
+    "judgment": { "type": "Possession", "date": "2024-12-15", "in_favor_of": "Plaintiff" }
+  }
+}`}</code></pre>
+      </div>
+    </section>
+
+    <section class="section">
+      <h2>Privacy & Sanitization</h2>
+      <ul class="privacy-list">
+        <li>
+          <strong>Tenant names</strong> are never stored or returned in any
+          API response or download. They are hashed at ingest time.
+        </li>
+        <li>
+          <strong>Addresses</strong> are truncated to street name + zip code.
+          No house numbers are published.
+        </li>
+        <li>
+          <strong>Plaintiff (landlord) names</strong> are published — they are
+          the plaintiff of record in a public court filing.
+        </li>
+        <li>
+          Data covers December 2024 eviction warrant filings only.
+        </li>
+      </ul>
+    </section>
+  </div>
+</BaseLayout>
+
+<style>
+  .page-header {
+    padding-block: var(--space-12);
+    border-bottom: 1px solid var(--color-border);
+    margin-bottom: var(--space-12);
+  }
+
+  .page-header h1 {
+    font-size: var(--text-3xl);
+    margin-bottom: var(--space-4);
+  }
+
+  .page-header p {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+    max-width: var(--max-width-prose);
+  }
+
+  .section {
+    margin-bottom: var(--space-16);
+  }
+
+  .section h2 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-6);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* Downloads */
+  .downloads {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--space-6);
+  }
+
+  .download-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    padding: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .download-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+
+  .download-card__label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    background: var(--color-amber-100);
+    color: var(--color-amber-700);
+    padding: 2px var(--space-2);
+    border-radius: var(--border-radius-sm);
+  }
+
+  .download-card h3 {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .download-card p {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    flex: 1;
+    max-width: none;
+  }
+
+  .download-btn {
+    display: inline-block;
+    padding: var(--space-2) var(--space-4);
+    background: var(--color-amber-500);
+    color: var(--color-brown-900);
+    border-radius: var(--border-radius-sm);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    text-decoration: none;
+    text-align: center;
+    transition: background var(--transition-fast);
+  }
+
+  .download-btn:hover {
+    background: var(--color-amber-400);
+    text-decoration: none;
+  }
+
+  /* API */
+  .api-note {
+    color: var(--color-text-secondary);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-6);
+  }
+
+  .endpoint {
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-md);
+    margin-bottom: var(--space-6);
+    overflow: hidden;
+  }
+
+  .endpoint__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    background: var(--color-surface-alt);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .method {
+    background: var(--color-amber-700);
+    color: white;
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    padding: 2px var(--space-2);
+    border-radius: var(--border-radius-sm);
+  }
+
+  .path {
+    font-size: var(--text-base);
+    font-family: monospace;
+    color: var(--color-text-heading);
+  }
+
+  .endpoint p {
+    padding: var(--space-4) var(--space-6);
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    border-bottom: 1px solid var(--color-border-subtle);
+    max-width: none;
+  }
+
+  .endpoint code {
+    font-family: monospace;
+    font-size: 0.9em;
+    background: var(--color-surface-warm);
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  .code-block {
+    background: var(--color-brown-900);
+    color: rgba(255, 255, 255, 0.85);
+    padding: var(--space-6);
+    font-size: var(--text-sm);
+    overflow-x: auto;
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  .code-block code {
+    font-family: monospace;
+    background: none;
+    padding: 0;
+  }
+
+  /* Privacy */
+  .privacy-list {
+    padding-left: var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+
+  .privacy-list li {
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+  }
+</style>
