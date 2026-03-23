@@ -9,8 +9,5 @@ binding = "ASSETS"
 [[d1_databases]]
 binding = "DB"
 database_name = "evictions"
-database_id = "placeholder-replace-after-d1-create"
+database_id = "9d4a5fbf-027e-4418-b473-232b4febf02b"
 
-[[r2_buckets]]
-binding = "DOWNLOADS"
-bucket_name = "eviction-assets"

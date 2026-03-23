@@ -18,7 +18,8 @@
     "parse:html": "tsx scripts/parse-html-to-json.ts",
     "load:db": "tsx scripts/load-json-to-db.ts",
     "check:missing": "tsx scripts/check-missing-cases.ts",
-    "geocode": "tsx scripts/geocode-tenant-addresses.ts"
+    "geocode": "tsx scripts/geocode-tenant-addresses.ts",
+    "secrets:push": "node -e \"const o={};require('fs').readFileSync('.dev.vars','utf8').trim().split('\\n').forEach(l=>{const i=l.indexOf('=');if(i>0)o[l.slice(0,i)]=l.slice(i+1)});process.stdout.write(JSON.stringify(o))\" | wrangler secret bulk"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^12.6.13",
