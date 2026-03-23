@@ -181,13 +181,13 @@ describe("Database Loader", () => {
       const agent = parties.find((p) => p.party_type === "agent");
 
       expect(tenant).toBeDefined();
-      expect(tenant?.name).toBe("Doe, Jane A.");
+      expect(tenant?.name).toBe("DOE JANE A");
 
       expect(landlord).toBeDefined();
-      expect(landlord?.name).toBe("Northwood Homes LP TA NORTHWOOD HOMES");
+      expect(landlord?.name).toBe("NORTHWOOD HOMES LP NORTHWOOD HOMES");
 
       expect(agent).toBeDefined();
-      expect(agent?.name).toBe("RENTCOURTFILE, LLC");
+      expect(agent?.name).toBe("RENTCOURTFILE LLC");
     });
 
     it("should load tenant address with unit", () => {
@@ -204,7 +204,7 @@ describe("Database Loader", () => {
         .get(tenant.address_id) as DbAddress;
 
       expect(address).toBeDefined();
-      expect(address.street).toBe("456 OAK AVENUE");
+      expect(address.street).toBe("456 OAK AVE");
       expect(address.unit).toBe("APT E");
       expect(address.city).toBe("BALTIMORE");
       expect(address.state).toBe("MD");
@@ -225,7 +225,7 @@ describe("Database Loader", () => {
         .get(landlord.address_id) as DbAddress;
 
       expect(address).toBeDefined();
-      expect(address.street).toBe("123 MAIN STREET");
+      expect(address.street).toBe("123 MAIN ST");
       expect(address.unit).toBeNull(); // SQLite returns null for missing values
       expect(address.city).toBe("BALTIMORE");
       expect(address.state).toBe("MD");
@@ -315,7 +315,7 @@ describe("Database Loader", () => {
         .prepare("SELECT * FROM addresses WHERE id = ?")
         .get(landlord.address_id) as DbAddress;
 
-      expect(address.street).toBe("789 ELM STREET");
+      expect(address.street).toBe("789 ELM ST");
       expect(address.unit).toBe("SUITE 215");
     });
 
@@ -332,7 +332,7 @@ describe("Database Loader", () => {
         .prepare("SELECT * FROM addresses WHERE id = ?")
         .get(tenant.address_id) as DbAddress;
 
-      expect(address.unit).toBe("Stes 300 & 301");
+      expect(address.unit).toBe("STES 300 301");
     });
 
     it("should handle warrant denied event", () => {
@@ -401,8 +401,8 @@ describe("Database Loader", () => {
         .all(caseId, "tenant") as DbCaseParty[];
 
       expect(tenants).toHaveLength(2);
-      expect(tenants[0].name).toBe("DOE, ROBERT M");
-      expect(tenants[1].name).toBe("JONES, JAMES K");
+      expect(tenants[0].name).toBe("DOE ROBERT M");
+      expect(tenants[1].name).toBe("JONES JAMES K");
     });
 
     it("should load agent party type", () => {
@@ -415,7 +415,7 @@ describe("Database Loader", () => {
         .get(caseId, "agent") as DbCaseParty;
 
       expect(agent).toBeDefined();
-      expect(agent.name).toBe("WILLIAMS, DAVID L");
+      expect(agent.name).toBe("WILLIAMS DAVID L");
     });
 
     it("should handle evicted event", () => {
