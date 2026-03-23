@@ -1,6 +1,6 @@
 # The Social Determinants of Eviction
 
-An interactive public dashboard exploring eviction warrant patterns in Baltimore City, Maryland. Built on December 2024 court data from the Maryland Case Search system.
+**[evictiondata.org](https://evictiondata.org)** — An interactive public dashboard exploring eviction warrant patterns in Baltimore City, Maryland. Built on December 2024 court data from the Maryland Case Search system.
 
 ## What's on the site
 
