@@ -40,6 +40,7 @@
 
   function render() {
     if (!container || !data.length) return;
+    const width = container.clientWidth || 400;
     container.innerHTML = "";
 
     const marks: Plot.Markish[] = [
@@ -63,6 +64,7 @@
     ];
 
     const chart = Plot.plot({
+      width,
       marks,
       x: { label: xLabel, grid: true },
       y: { label: yLabel, grid: true },
@@ -88,7 +90,12 @@
     }
   }
 
-  onMount(render);
+  onMount(() => {
+    render();
+    const ro = new ResizeObserver(render);
+    ro.observe(container);
+    return () => ro.disconnect();
+  });
   $effect(render);
 </script>
 
@@ -107,7 +114,6 @@
 
   .chart {
     width: 100%;
-    overflow-x: auto;
   }
 
   .chart :global(svg) {

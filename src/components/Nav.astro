@@ -8,10 +8,20 @@ const links = [
 const pathname = Astro.url.pathname;
 ---
 
-<nav class="nav">
+<nav class="nav" aria-label="Main navigation">
   <div class="nav__inner container">
-    <a href="/" class="nav__logo"> Eviction Data </a>
-    <ul class="nav__links">
+    <a href="/" class="nav__logo">Eviction Data</a>
+    <button
+      class="nav__toggle"
+      aria-label="Open menu"
+      aria-expanded="false"
+      aria-controls="nav-menu"
+    >
+      <span class="nav__toggle-bar"></span>
+      <span class="nav__toggle-bar"></span>
+      <span class="nav__toggle-bar"></span>
+    </button>
+    <ul class="nav__links" id="nav-menu" role="list">
       {
         links.map(({ href, label }) => (
           <li>
@@ -31,6 +41,26 @@ const pathname = Astro.url.pathname;
   </div>
 </nav>
 
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>(".nav__toggle");
+  const menu = document.getElementById("nav-menu");
+
+  toggle?.addEventListener("click", () => {
+    const expanded = toggle.getAttribute("aria-expanded") === "true";
+    toggle.setAttribute("aria-expanded", String(!expanded));
+    toggle.setAttribute("aria-label", expanded ? "Open menu" : "Close menu");
+    menu?.classList.toggle("nav__links--open");
+  });
+
+  menu?.querySelectorAll("a").forEach((link) => {
+    link.addEventListener("click", () => {
+      toggle?.setAttribute("aria-expanded", "false");
+      toggle?.setAttribute("aria-label", "Open menu");
+      menu.classList.remove("nav__links--open");
+    });
+  });
+</script>
+
 <style>
   .nav {
     background: var(--color-brown-700);
@@ -46,6 +76,7 @@ const pathname = Astro.url.pathname;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-6);
+    position: relative;
   }
 
   .nav__logo {
@@ -62,10 +93,60 @@ const pathname = Astro.url.pathname;
     text-decoration: none;
   }
 
+  .nav__logo:focus-visible {
+    outline: 2px solid var(--color-amber-400);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  /* Hamburger button — hidden on desktop */
+  .nav__toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    padding: var(--space-2);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--border-radius-sm);
+  }
+
+  .nav__toggle:focus-visible {
+    outline: 2px solid var(--color-amber-400);
+    outline-offset: 2px;
+  }
+
+  .nav__toggle-bar {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background: var(--color-text-on-dark);
+    border-radius: 2px;
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(1) {
+    transform: translateY(7px) rotate(45deg);
+  }
+  .nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(2) {
+    opacity: 0;
+  }
+  .nav__toggle[aria-expanded="true"] .nav__toggle-bar:nth-child(3) {
+    transform: translateY(-7px) rotate(-45deg);
+  }
+
+  /* Desktop links */
   .nav__links {
     display: flex;
     list-style: none;
     gap: var(--space-6);
+    margin: 0;
+    padding: 0;
   }
 
   .nav__link {
@@ -85,12 +166,59 @@ const pathname = Astro.url.pathname;
     border-bottom-color: var(--color-amber-400);
   }
 
+  .nav__link:focus-visible {
+    outline: 2px solid var(--color-amber-400);
+    outline-offset: 4px;
+    border-radius: 2px;
+  }
+
+  /* Mobile */
   @media (max-width: 640px) {
-    .nav__logo {
-      font-size: var(--text-xs);
+    .nav__toggle {
+      display: flex;
     }
+
     .nav__links {
-      gap: var(--space-4);
+      display: none;
+      position: absolute;
+      top: calc(100% + var(--space-4));
+      left: calc(-1 * var(--space-4));
+      right: calc(-1 * var(--space-4));
+      flex-direction: column;
+      gap: 0;
+      background: var(--color-brown-800, #2a1f14);
+      padding: var(--space-2) 0;
+      box-shadow: var(--shadow-md);
+    }
+
+    .nav__links--open {
+      display: flex;
+    }
+
+    .nav__links li {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .nav__links li:last-child {
+      border-bottom: none;
+    }
+
+    .nav__link {
+      display: block;
+      padding: var(--space-4) var(--space-6);
+      font-size: var(--text-base);
+      border-bottom: none;
+    }
+
+    .nav__link--active {
+      background: rgba(255, 255, 255, 0.06);
+      border-bottom: none;
+      color: var(--color-amber-300);
+    }
+
+    .nav__link:hover {
+      border-bottom: none;
+      background: rgba(255, 255, 255, 0.08);
     }
   }
 </style>
