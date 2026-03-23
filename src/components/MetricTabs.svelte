@@ -15,21 +15,56 @@
 </script>
 
 <div class="sticky-bar">
-  <div class="metric-tabs" role="tablist" aria-label="Map metric">
-    {#each metrics as metric (metric)}
-      <button
-        role="tab"
-        aria-selected={$activeMetric === metric}
-        class:active={$activeMetric === metric}
-        onclick={() => activeMetric.set(metric)}
-      >
-        {METRIC_LABELS[metric]}
-      </button>
-    {/each}
+  <!-- Row 1: controls -->
+  <div class="controls-row">
+    <!-- Desktop: tab buttons -->
+    <div class="metric-tabs" role="tablist" aria-label="Map metric">
+      {#each metrics as metric (metric)}
+        <button
+          role="tab"
+          aria-selected={$activeMetric === metric}
+          class:active={$activeMetric === metric}
+          onclick={() => activeMetric.set(metric)}
+        >
+          {METRIC_LABELS[metric]}
+        </button>
+      {/each}
+    </div>
+
+    <!-- Mobile: select dropdown -->
+    <select
+      class="metric-select"
+      aria-label="Map metric"
+      value={$activeMetric}
+      onchange={(e) =>
+        activeMetric.set(
+          (e.currentTarget as HTMLSelectElement).value as MetricKey
+        )}
+    >
+      {#each metrics as metric (metric)}
+        <option value={metric}>{METRIC_LABELS[metric]}</option>
+      {/each}
+    </select>
+
+    <!-- Desktop: selected CSA (inline with tabs) -->
+    {#if $selectedCsa}
+      <div class="selected-csa selected-csa--desktop">
+        <span class="selected-csa__label">Selected:</span>
+        <span class="selected-csa__name">{$selectedCsa}</span>
+        <button
+          class="selected-csa__clear"
+          onclick={() => selectedCsa.set(null)}
+          aria-label="Clear selection"
+        >
+          ✕
+        </button>
+      </div>
+    {/if}
   </div>
 
+  <!-- Row 2 (mobile only): selected CSA below the dropdown -->
   {#if $selectedCsa}
-    <div class="selected-csa">
+    <div class="selected-csa selected-csa--mobile">
       <span class="selected-csa__label">Selected:</span>
       <span class="selected-csa__name">{$selectedCsa}</span>
       <button
@@ -46,17 +81,27 @@
 <style>
   .sticky-bar {
     display: flex;
-    align-items: center;
-    gap: var(--space-4);
+    flex-direction: column;
+    gap: 0;
     padding: var(--space-3) var(--space-6);
-    flex-wrap: wrap;
   }
 
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+  }
+
+  /* Desktop tabs */
   .metric-tabs {
     display: flex;
     gap: var(--space-2);
     flex-wrap: wrap;
     flex: 1;
+  }
+
+  .metric-select {
+    display: none;
   }
 
   button {
@@ -118,5 +163,48 @@
     background: var(--color-surface-alt);
     border-color: var(--color-border);
     color: var(--color-text-primary);
+  }
+
+  /* Mobile-only row is hidden on desktop */
+  .selected-csa--mobile {
+    display: none;
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .sticky-bar {
+      padding: var(--space-3) var(--space-4);
+    }
+
+    .metric-tabs {
+      display: none;
+    }
+
+    .metric-select {
+      display: block;
+      flex: 1;
+      padding: var(--space-2) var(--space-3);
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text-heading);
+      font-family: var(--font-sans);
+      font-size: var(--text-sm);
+      font-weight: var(--font-weight-medium);
+      cursor: pointer;
+    }
+
+    /* Hide inline desktop version, show stacked mobile version */
+    .selected-csa--desktop {
+      display: none;
+    }
+
+    .selected-csa--mobile {
+      display: flex;
+      white-space: normal;
+      border-top: 1px solid var(--color-border-subtle);
+      margin-top: var(--space-2);
+      padding-top: var(--space-2);
+    }
   }
 </style>
