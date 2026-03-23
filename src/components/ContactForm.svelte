@@ -16,27 +16,17 @@
 
   async function handleSubmit(e: Event) {
     e.preventDefault();
+    console.log("[ContactForm] submit fired, honeypot:", honeypot);
     if (honeypot) return; // silently drop spam
     status = "submitting";
     errorMsg = "";
 
-    const apiUrl = import.meta.env.PUBLIC_CONTACT_FORM_API_URL as string | undefined;
-    const apiToken = import.meta.env.PUBLIC_CONTACT_FORM_API_TOKEN as string | undefined;
-
-    if (!apiUrl || !apiToken) {
-      status = "error";
-      errorMsg = "Contact form is not configured yet. Please try again later.";
-      return;
-    }
-
+    // API URL: https://api.baserow.io/api/database/rows/table/898355/
     try {
-      const res = await fetch(apiUrl, {
+      const res = await fetch("/api/contact", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ fields: { Name: name, Email: email, Message: message, Intent: intent } }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, intent, message }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       status = "success";
@@ -56,7 +46,7 @@
   <!-- Honeypot -->
   <input
     type="text"
-    name="website"
+    name="_trap"
     bind:value={honeypot}
     autocomplete="off"
     tabindex="-1"

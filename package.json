@@ -3,9 +3,9 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "astro build && wrangler dev",
     "build": "astro build",
-    "preview": "astro preview",
+    "preview": "astro build && wrangler dev --env production",
     "astro": "astro",
     "test": "vitest",
     "test:run": "vitest run",
