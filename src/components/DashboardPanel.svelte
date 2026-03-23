@@ -5,7 +5,6 @@
     selectedCsaLandlords,
     selectedCsaSlug,
   } from "../stores/dashboard";
-  import type { LandlordRow } from "../lib/types";
 
   let loadingLandlords = false;
 
@@ -49,7 +48,9 @@
     <div class="metrics-grid">
       <div class="metric-tile">
         <span class="metric-tile__label">Warrant rate</span>
-        <span class="metric-tile__value">{fmt(d.eviction_rate_per_1k_residents)}</span>
+        <span class="metric-tile__value"
+          >{fmt(d.eviction_rate_per_1k_residents)}</span
+        >
         <span class="metric-tile__unit">per 1k residents</span>
       </div>
       <div class="metric-tile">
@@ -62,7 +63,9 @@
       </div>
       <div class="metric-tile">
         <span class="metric-tile__label">Ownership concentration</span>
-        <span class="metric-tile__value">{fmtPct(d.ownership_concentration_pct)}</span>
+        <span class="metric-tile__value"
+          >{fmtPct(d.ownership_concentration_pct)}</span
+        >
         <span class="metric-tile__unit">top-10 owner share</span>
       </div>
     </div>
@@ -84,7 +87,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each $selectedCsaLandlords as row}
+            {#each $selectedCsaLandlords as row (row.plaintiff)}
               <tr>
                 <td class="landlords__name">{row.plaintiff}</td>
                 <td>{row.warrant_count}</td>

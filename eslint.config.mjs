@@ -17,6 +17,9 @@ export default [
       "*.min.js",
       ".astro/",
       ".svelte-kit/",
+      ".wrangler/",
+      "analysis/",
+      "extension/",
     ],
   },
   pluginJs.configs.recommended,
@@ -26,10 +29,14 @@ export default [
   {
     files: ["**/*.svelte"],
     languageOptions: {
+      globals: globals.browser,
       parser: svelteParser,
       parserOptions: {
         parser: tsParser,
       },
+    },
+    rules: {
+      "svelte/no-dom-manipulating": "off",
     },
   },
 ];

@@ -2,7 +2,8 @@ import type { APIRoute } from "astro";
 import { getCaseById } from "../../../lib/db";
 
 export const GET: APIRoute = async ({ params, locals }) => {
-  const db = (locals as { runtime: { env: { DB: D1Database } } }).runtime.env.DB;
+  const db = (locals as { runtime: { env: { DB: D1Database } } }).runtime.env
+    .DB;
   const caseId = params.case_id ?? "";
 
   if (!caseId) {

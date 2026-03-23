@@ -7,6 +7,7 @@ Created a comprehensive SQLite database loader system for eviction case data wit
 ## 📦 What Was Created
 
 ### 1. Database Schema (`src/lib/loader/schema.ts`)
+
 - **Lookup Tables** for easy maintenance:
   - `case_types` - Unique case types with auto-incrementing IDs
   - `case_statuses` - Unique case statuses with auto-incrementing IDs
@@ -25,6 +26,7 @@ Created a comprehensive SQLite database loader system for eviction case data wit
   - Schema initialization and teardown functions
 
 ### 2. Data Loader (`src/lib/loader/loader.ts`)
+
 - **Smart Loading Logic**:
   - Automatic case type/status lookup table population
   - Idempotent case loading (updates if already exists)
@@ -37,12 +39,14 @@ Created a comprehensive SQLite database loader system for eviction case data wit
   - Internal functions for lookup management and relational data
 
 ### 3. Module Exports (`src/lib/loader/index.ts`)
+
 - Clean public API exporting:
   - Schema functions
   - Loader functions
   - TypeScript types for all database entities
 
 ### 4. Comprehensive Test Suite (`__tests__/loader.test.ts`)
+
 - **44 Passing Tests** covering:
   - ✅ Schema initialization and validation
   - ✅ Index creation
@@ -61,6 +65,7 @@ Created a comprehensive SQLite database loader system for eviction case data wit
   - ✅ Complex query performance
 
 ### 5. Example Script (`scripts/load-json-to-db.ts`)
+
 - Demonstrates real-world usage
 - Loads all JSON files from `data/json` directory
 - Displays comprehensive statistics
@@ -68,6 +73,7 @@ Created a comprehensive SQLite database loader system for eviction case data wit
 - Can be run via: `npm run load:db`
 
 ### 6. Documentation (`src/lib/loader/README.md`)
+
 - Usage examples
 - Schema explanation
 - Benefits of lookup tables
@@ -139,20 +145,24 @@ Created a comprehensive SQLite database loader system for eviction case data wit
 ## 🌟 Key Features
 
 ### 1. Lookup Tables for Maintenance
+
 Instead of storing case types and statuses as strings in every case record, they're normalized into separate tables. This allows you to:
 
 ```typescript
 // Rename a case type in one place
-db.prepare(`
+db.prepare(
+  `
   UPDATE case_types 
   SET name = 'FTPR - Failure to Pay Rent' 
   WHERE name = 'Failure to Pay Rent'
-`).run();
+`
+).run();
 
 // All cases automatically reflect the new name
 ```
 
 ### 2. Idempotent Loading
+
 Load the same case multiple times without creating duplicates:
 
 ```typescript
@@ -161,13 +171,17 @@ loadCase(db, caseData); // Updates existing case
 ```
 
 ### 3. Referential Integrity
+
 Foreign keys ensure data consistency:
+
 - Can't delete a case type that's in use
 - Deleting a case cascades to delete its parties and events
 - Parties reference valid addresses
 
 ### 4. Performance Indexes
+
 Automatic indexes on common query patterns:
+
 - Case number lookups (unique constraint + index)
 - Case type filtering
 - Case status filtering
@@ -180,6 +194,7 @@ Automatic indexes on common query patterns:
 **44 tests, all passing ✨**
 
 Test categories:
+
 - Schema Initialization (4 tests)
 - Loading THO Case (10 tests)
 - Loading BOL Case (5 tests)
@@ -193,16 +208,19 @@ Test categories:
 ## 🚀 Usage
 
 ### Run Tests
+
 ```bash
 npm test -- __tests__/loader.test.ts
 ```
 
 ### Load Data from JSON
+
 ```bash
 npm run load:db
 ```
 
 ### Use in Code
+
 ```typescript
 import Database from "better-sqlite3";
 import { initializeSchema, loadCases } from "./src/lib/loader/index.js";
@@ -262,14 +280,16 @@ DATABASE_LOADER_SUMMARY.md - This file
 ## 🔍 Example Queries
 
 ### Get all cases by type
+
 ```sql
-SELECT c.* 
+SELECT c.*
 FROM cases c
 JOIN case_types ct ON c.case_type_id = ct.id
 WHERE ct.name = 'Failure to Pay Rent';
 ```
 
 ### Find cases with eviction warrants
+
 ```sql
 SELECT DISTINCT c.case_number, c.title
 FROM cases c
@@ -278,6 +298,7 @@ WHERE ce.event_type LIKE '%Warrant of Restitution%';
 ```
 
 ### Count tenants by city
+
 ```sql
 SELECT a.city, COUNT(*) as tenant_count
 FROM case_parties cp
@@ -288,6 +309,7 @@ ORDER BY tenant_count DESC;
 ```
 
 ### Get case timeline
+
 ```sql
 SELECT ce.date, ce.event_type, ce.comment
 FROM case_events ce
@@ -298,4 +320,3 @@ ORDER BY ce.date;
 ---
 
 **Status**: ✅ Complete - All tests passing, documentation complete, ready to use!
-

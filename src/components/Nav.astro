@@ -10,16 +10,17 @@ const pathname = Astro.url.pathname;
 
 <nav class="nav">
   <div class="nav__inner container">
-    <a href="/" class="nav__logo">
-      Eviction Data
-    </a>
+    <a href="/" class="nav__logo"> Eviction Data </a>
     <ul class="nav__links">
       {
         links.map(({ href, label }) => (
           <li>
             <a
               href={href}
-              class:list={["nav__link", { "nav__link--active": pathname.startsWith(href) }]}
+              class:list={[
+                "nav__link",
+                { "nav__link--active": pathname.startsWith(href) },
+              ]}
             >
               {label}
             </a>

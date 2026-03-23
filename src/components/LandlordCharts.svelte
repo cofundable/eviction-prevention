@@ -4,7 +4,12 @@
 
   interface Props {
     concentrationData: { tier: string; pct: number; color: string }[];
-    top20Data: { plaintiff: string; evictions: number; not_evicted: number; total: number }[];
+    top20Data: {
+      plaintiff: string;
+      evictions: number;
+      not_evicted: number;
+      total: number;
+    }[];
   }
 
   let { concentrationData, top20Data }: Props = $props();
@@ -56,8 +61,16 @@
     const yDomain = sorted.map((d) => d.plaintiff);
     const rows: { plaintiff: string; value: number; type: string }[] = [];
     for (const d of sorted) {
-      rows.push({ plaintiff: d.plaintiff, value: d.not_evicted, type: "Not evicted" });
-      rows.push({ plaintiff: d.plaintiff, value: d.evictions, type: "Evicted" });
+      rows.push({
+        plaintiff: d.plaintiff,
+        value: d.not_evicted,
+        type: "Not evicted",
+      });
+      rows.push({
+        plaintiff: d.plaintiff,
+        value: d.evictions,
+        type: "Evicted",
+      });
     }
 
     const chart = Plot.plot({
@@ -77,7 +90,11 @@
         range: ["#b88500", "#e6ce8e"],
         legend: true,
       },
-      style: { fontFamily: "var(--font-sans)", fontSize: 11, overflow: "visible" },
+      style: {
+        fontFamily: "var(--font-sans)",
+        fontSize: 11,
+        overflow: "visible",
+      },
       marginLeft: 240,
       marginRight: 16,
       marginBottom: 36,
@@ -92,8 +109,8 @@
   });
 
   $effect(() => {
-    concentrationData;
-    top20Data;
+    void concentrationData;
+    void top20Data;
     renderConcentration();
     renderTop20();
   });

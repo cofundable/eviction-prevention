@@ -11,8 +11,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <header class="page-header">
       <h1>Data & API</h1>
       <p>
-        All data is derived from public Maryland court records. Tenant names
-        are never published. Street addresses are truncated to street name + zip
+        All data is derived from public Maryland court records. Tenant names are
+        never published. Street addresses are truncated to street name + zip
         code.
       </p>
     </header>
@@ -58,8 +58,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <p>
             One row per court plaintiff. Includes the matched SDAT property
             owner (resolved via spatial join to parcel data), total warrants
-            filed, evictions executed, and how many warrants were matched to
-            a parcel. Source for all landlord charts on this site.
+            filed, evictions executed, and how many warrants were matched to a
+            parcel. Source for all landlord charts on this site.
           </p>
           <a href="/downloads/landlord_master.csv" class="download-btn">
             Download landlord_master.csv
@@ -74,26 +74,28 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <h3 class="method-heading">Data sources</h3>
       <ul class="method-list">
         <li>
-          <strong>Warrant filings</strong> — case numbers were identified via
-          the <a href="https://app.powerbigov.us/view?r=eyJrIjoiMmYyNWMyMGItOTg5My00Y2ZiLTg4ZjctNmM2MjE2ZmZhZWZiIiwidCI6IjdkM2I4ZDAwLWY5YmUtNDZlNy05NDYwLTRlZjJkOGY3MzE0OSJ9" target="_blank" rel="noopener">Maryland Eviction Dashboard</a>,
-          then individual case records were downloaded from Maryland Case Search
-          (District Court, Baltimore City, December 2024). Each row is one
-          warrant of restitution request.
+          <strong>Warrant filings</strong> — case numbers were identified via the
+          <a
+            href="https://app.powerbigov.us/view?r=eyJrIjoiMmYyNWMyMGItOTg5My00Y2ZiLTg4ZjctNmM2MjE2ZmZhZWZiIiwidCI6IjdkM2I4ZDAwLWY5YmUtNDZlNy05NDYwLTRlZjJkOGY3MzE0OSJ9"
+            target="_blank"
+            rel="noopener">Maryland Eviction Dashboard</a
+          >, then individual case records were downloaded from Maryland Case
+          Search (District Court, Baltimore City, December 2024). Each row is
+          one warrant of restitution request.
         </li>
         <li>
-          <strong>Eviction execution</strong> — identified by a
-          "Warrant of Restitution — Return of Service — Evicted" docket entry
-          on the same case.
+          <strong>Eviction execution</strong> — identified by a "Warrant of Restitution
+          — Return of Service — Evicted" docket entry on the same case.
         </li>
         <li>
-          <strong>SDAT parcel data</strong> — Maryland State Department of
-          Assessments and Taxation real property file. Used to resolve court
-          plaintiff names to deed-of-record property owners.
+          <strong>SDAT parcel data</strong> — Maryland State Department of Assessments
+          and Taxation real property file. Used to resolve court plaintiff names to
+          deed-of-record property owners.
         </li>
         <li>
-          <strong>Demographic indicators</strong> — BNIA Vital Signs 2023.
-          Eviction rate, racial composition, income, and unemployment by
-          Community Statistical Area.
+          <strong>Demographic indicators</strong> — BNIA Vital Signs 2023. Eviction
+          rate, racial composition, income, and unemployment by Community Statistical
+          Area.
         </li>
       </ul>
 
@@ -101,20 +103,20 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <p class="method-text">
         The same landlord often files under different LLC names or management
         company names. To deduplicate, each warrant's geocoded tenant address
-        was spatially joined (nearest-neighbour, ≤ 50 m) to SDAT rental
-        parcels. The deed-of-record owner (<code>sdat_owner</code>) is the
-        dominant parcel match across all of a plaintiff's warrants.
-        <code>landlord_master.csv</code> carries both the court name and the
-        resolved SDAT owner so you can group either way.
+        was spatially joined (nearest-neighbour, ≤ 50 m) to SDAT rental parcels.
+        The deed-of-record owner (<code>sdat_owner</code>) is the dominant
+        parcel match across all of a plaintiff's warrants.
+        <code>landlord_master.csv</code> carries both the court name and the resolved
+        SDAT owner so you can group either way.
       </p>
 
       <h3 class="method-heading">CSA assignment</h3>
       <p class="method-text">
-        Each warrant is assigned to a Community Statistical Area via the
-        tenant address census tract, using the Maryland Census
-        tract-to-CSA 2010 crosswalk. Warrants where geocoding failed or no
-        crosswalk match existed (~4%) are excluded from CSA-level analysis
-        but included in citywide totals.
+        Each warrant is assigned to a Community Statistical Area via the tenant
+        address census tract, using the Maryland Census tract-to-CSA 2010
+        crosswalk. Warrants where geocoding failed or no crosswalk match existed
+        (~4%) are excluded from CSA-level analysis but included in citywide
+        totals.
       </p>
     </section>
 
@@ -131,7 +133,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <code class="path">/api/csa</code>
         </div>
         <p>Returns all 55 CSA feature rows as a flat JSON array.</p>
-        <pre class="code-block"><code>{`GET /api/csa
+        <pre
+          class="code-block"><code>{`GET /api/csa
 
 {
   "data": [
@@ -157,7 +160,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           Single CSA with its top landlords. Name is URL-encoded (e.g.
           <code>Greenmount%20East</code>).
         </p>
-        <pre class="code-block"><code>{`GET /api/csa/Greenmount%20East
+        <pre
+          class="code-block"><code>{`GET /api/csa/Greenmount%20East
 
 {
   "csa": "Greenmount East",
@@ -176,10 +180,10 @@ import BaseLayout from "../layouts/BaseLayout.astro";
         </div>
         <p>
           Paginated case list. Optional query params: <code>csa</code>,
-          <code>page</code> (default 1), <code>limit</code> (default 25, max
-          100).
+          <code>page</code> (default 1), <code>limit</code> (default 25, max 100).
         </p>
-        <pre class="code-block"><code>{`GET /api/cases?csa=Greenmount+East&page=1
+        <pre
+          class="code-block"><code>{`GET /api/cases?csa=Greenmount+East&page=1
 
 {
   "data": [
@@ -205,7 +209,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <code class="path">/api/cases/:case_id</code>
         </div>
         <p>Single case with full nested court record details.</p>
-        <pre class="code-block"><code>{`GET /api/cases/0801SP0012345
+        <pre
+          class="code-block"><code>{`GET /api/cases/0801SP0012345
 
 {
   "case_id": "0801SP0012345",
@@ -226,20 +231,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <h2>Privacy & Sanitization</h2>
       <ul class="privacy-list">
         <li>
-          <strong>Tenant names</strong> are never stored or returned in any
-          API response or download. They are hashed at ingest time.
+          <strong>Tenant names</strong> are never stored or returned in any API response
+          or download. They are hashed at ingest time.
         </li>
         <li>
-          <strong>Addresses</strong> are truncated to street name + zip code.
-          No house numbers are published.
+          <strong>Addresses</strong> are truncated to street name + zip code. No house
+          numbers are published.
         </li>
         <li>
-          <strong>Plaintiff (landlord) names</strong> are published — they are
-          the plaintiff of record in a public court filing.
+          <strong>Plaintiff (landlord) names</strong> are published — they are the
+          plaintiff of record in a public court filing.
         </li>
-        <li>
-          Data covers December 2024 eviction warrant filings only.
-        </li>
+        <li>Data covers December 2024 eviction warrant filings only.</li>
       </ul>
     </section>
   </div>

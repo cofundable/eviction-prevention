@@ -28,7 +28,12 @@
     if (!container || !data.length) return;
     container.innerHTML = "";
     const mark = horizontal
-      ? Plot.barX(data, { x: xField, y: yField, fill: color, sort: { y: "-x" } })
+      ? Plot.barX(data, {
+          x: xField,
+          y: yField,
+          fill: color,
+          sort: { y: "-x" },
+        })
       : Plot.barY(data, { x: xField, y: yField, fill: color });
     const chart = Plot.plot({
       marks: [mark, Plot.ruleY ? Plot.ruleY([0]) : null].filter(Boolean),

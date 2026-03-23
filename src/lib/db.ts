@@ -80,7 +80,9 @@ export async function getCases(
          LIMIT ? OFFSET ?`
       )
       .bind(...binds)
-      .all<Omit<CaseSummary, "eviction_executed"> & { eviction_executed: number }>(),
+      .all<
+        Omit<CaseSummary, "eviction_executed"> & { eviction_executed: number }
+      >(),
     db
       .prepare(`SELECT COUNT(*) as total FROM cases_public ${where}`)
       .bind(...(csa ? [csa] : []))

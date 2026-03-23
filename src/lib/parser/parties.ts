@@ -57,7 +57,7 @@ function parseParty(
   // Find the table containing the address (usually the next table after the name)
   let addressTable = nameRow.closest("table").next("table");
   if (addressTable.length === 0) {
-    addressTable = nameRow.closest("table");
+    addressTable = nameRow.closest("table") as Cheerio;
   }
 
   const address = parseAddress($, addressTable);

@@ -56,18 +56,30 @@
 
   <div class="field">
     <label for="cf-name">Name</label>
-    <input id="cf-name" type="text" bind:value={name} required autocomplete="name" />
+    <input
+      id="cf-name"
+      type="text"
+      bind:value={name}
+      required
+      autocomplete="name"
+    />
   </div>
 
   <div class="field">
     <label for="cf-email">Email</label>
-    <input id="cf-email" type="email" bind:value={email} required autocomplete="email" />
+    <input
+      id="cf-email"
+      type="email"
+      bind:value={email}
+      required
+      autocomplete="email"
+    />
   </div>
 
   <div class="field">
     <label for="cf-intent">I want to…</label>
     <select id="cf-intent" bind:value={intent}>
-      {#each INTENTS as opt}
+      {#each INTENTS as opt (opt.value)}
         <option value={opt.value}>{opt.label}</option>
       {/each}
     </select>

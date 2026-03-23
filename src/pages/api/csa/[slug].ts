@@ -3,7 +3,8 @@ import { getCsaDetail, getCsaFeatures } from "../../../lib/db";
 import { toSlug } from "../../../lib/utils";
 
 export const GET: APIRoute = async ({ params, locals }) => {
-  const db = (locals as { runtime: { env: { DB: D1Database } } }).runtime.env.DB;
+  const db = (locals as { runtime: { env: { DB: D1Database } } }).runtime.env
+    .DB;
   const slug = params.slug ?? "";
 
   if (!slug) {

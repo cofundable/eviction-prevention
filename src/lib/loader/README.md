@@ -53,8 +53,12 @@ const caseData: CaseData = {
     caseStatus: "Active",
     // ... other fields
   },
-  parties: [/* ... */],
-  timeline: [/* ... */],
+  parties: [
+    /* ... */
+  ],
+  timeline: [
+    /* ... */
+  ],
 };
 
 const caseId = loadCase(db, caseData);
@@ -75,27 +79,39 @@ console.log(`Loaded ${caseIds.length} cases`);
 
 ```typescript
 // Get all cases of a specific type
-const ftprCases = db.prepare(`
+const ftprCases = db
+  .prepare(
+    `
   SELECT c.* 
   FROM cases c
   JOIN case_types ct ON c.case_type_id = ct.id
   WHERE ct.name = ?
-`).all("Failure to Pay Rent");
+`
+  )
+  .all("Failure to Pay Rent");
 
 // Get all parties for a case
-const parties = db.prepare(`
+const parties = db
+  .prepare(
+    `
   SELECT cp.*, a.street, a.city, a.state, a.zip_code
   FROM case_parties cp
   LEFT JOIN addresses a ON cp.address_id = a.id
   WHERE cp.case_id = ?
-`).all(caseId);
+`
+  )
+  .all(caseId);
 
 // Get case events in chronological order
-const events = db.prepare(`
+const events = db
+  .prepare(
+    `
   SELECT * FROM case_events 
   WHERE case_id = ? 
   ORDER BY date
-`).all(caseId);
+`
+  )
+  .all(caseId);
 ```
 
 ### Rename a Case Type
@@ -104,11 +120,13 @@ One of the main benefits of lookup tables is the ability to rename types without
 
 ```typescript
 // Rename "Tenant Holding Over" to "THO - Tenant Holding Over"
-db.prepare(`
+db.prepare(
+  `
   UPDATE case_types 
   SET name = ? 
   WHERE name = ?
-`).run("THO - Tenant Holding Over", "Tenant Holding Over");
+`
+).run("THO - Tenant Holding Over", "Tenant Holding Over");
 
 // All cases with this type now automatically show the new name
 ```
@@ -173,4 +191,3 @@ The test suite includes:
 - ✅ Edge case handling
 
 All 44 tests pass successfully! ✨
-

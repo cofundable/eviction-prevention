@@ -14,9 +14,10 @@ const {
   title,
   description = "Analyzing who gets evicted in Baltimore — and who's doing the evicting.",
 } = Astro.props;
-const fullTitle = title === "Home"
-  ? "The Social Determinants of Eviction"
-  : `${title} — The Social Determinants of Eviction`;
+const fullTitle =
+  title === "Home"
+    ? "The Social Determinants of Eviction"
+    : `${title} — The Social Determinants of Eviction`;
 ---
 
 <!doctype html>

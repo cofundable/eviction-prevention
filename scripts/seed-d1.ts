@@ -19,14 +19,8 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(__dirname, "..");
 
 const DB_PATH = resolve(ROOT, "evictions.db");
-const CSA_FEATURES_PATH = resolve(
-  ROOT,
-  "analysis/outputs/csa_features.csv"
-);
-const TRACT_CSA_PATH = resolve(
-  ROOT,
-  "analysis/data/tract_to_csa.csv"
-);
+const CSA_FEATURES_PATH = resolve(ROOT, "analysis/outputs/csa_features.csv");
+const TRACT_CSA_PATH = resolve(ROOT, "analysis/data/tract_to_csa.csv");
 const JSON_DIR = resolve(ROOT, "data/json");
 const OUT_PATH = resolve(ROOT, "seed.sql");
 
@@ -56,7 +50,9 @@ function parseCsv(content: string): Record<string, string>[] {
   const header = lines[0].replace(/^\uFEFF/, "").split(",");
   return lines.slice(1).map((line) => {
     const vals = line.split(",");
-    return Object.fromEntries(header.map((h, i) => [h.trim(), (vals[i] ?? "").trim()]));
+    return Object.fromEntries(
+      header.map((h, i) => [h.trim(), (vals[i] ?? "").trim()])
+    );
   });
 }
 
@@ -284,7 +280,10 @@ const landlordCsa = db
 }[];
 
 // Aggregate by CSA
-const landlordCsaMap = new Map<string, Map<string, { warrants: number; evictions: number }>>();
+const landlordCsaMap = new Map<
+  string,
+  Map<string, { warrants: number; evictions: number }>
+>();
 for (const row of landlordCsa) {
   let csa: string | null = null;
   if (row.census_tract) {

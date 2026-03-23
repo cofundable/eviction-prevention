@@ -66,7 +66,11 @@
       marks,
       x: { label: xLabel, grid: true },
       y: { label: yLabel, grid: true },
-      style: { fontFamily: "var(--font-sans)", fontSize: 12, background: "transparent" },
+      style: {
+        fontFamily: "var(--font-sans)",
+        fontSize: 12,
+        background: "transparent",
+      },
       marginBottom: 48,
     });
 

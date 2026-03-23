@@ -32,12 +32,16 @@
   };
 
   function getColorStops(features: CsaFeature[], metric: MetricKey) {
-    const vals = features.map((f) => f[metric] as number).filter((v) => !isNaN(v));
+    const vals = features
+      .map((f) => f[metric] as number)
+      .filter((v) => !isNaN(v));
     if (!vals.length) return [];
     const min = Math.min(...vals);
     const max = Math.max(...vals);
     const scale = INVERTED_METRICS[metric] ? [...SCALE].reverse() : SCALE;
-    return scale.map((color, i) => [min + (i / (scale.length - 1)) * (max - min), color]).flat();
+    return scale
+      .map((color, i) => [min + (i / (scale.length - 1)) * (max - min), color])
+      .flat();
   }
 
   function buildPaint(features: CsaFeature[], metric: MetricKey) {
@@ -63,7 +67,13 @@
       style: {
         version: 8,
         sources: {},
-        layers: [{ id: "background", type: "background", paint: { "background-color": "#f8f4ef" } }],
+        layers: [
+          {
+            id: "background",
+            type: "background",
+            paint: { "background-color": "#f8f4ef" },
+          },
+        ],
       },
       center: [-76.6122, 39.2904],
       zoom: 10.5,
@@ -83,7 +93,8 @@
         fetch("/api/csa"),
         fetch("/data/Community_Statistical_Areas.geojson"),
       ]);
-      const { data: features }: { data: CsaFeature[] } = await featuresRes.json();
+      const { data: features }: { data: CsaFeature[] } =
+        await featuresRes.json();
       const geojson = await geoRes.json();
 
       csaFeatures.set(features);
@@ -151,7 +162,11 @@
       // Re-paint when metric changes
       activeMetric.subscribe((metric) => {
         if (!map?.getLayer("csa-fill")) return;
-        map.setPaintProperty("csa-fill", "fill-color", buildPaint(features, metric)["fill-color"] as never);
+        map.setPaintProperty(
+          "csa-fill",
+          "fill-color",
+          buildPaint(features, metric)["fill-color"] as never
+        );
         map.setPaintProperty("csa-fill", "fill-opacity", 0.85);
       });
 

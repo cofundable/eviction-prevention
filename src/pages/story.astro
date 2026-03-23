@@ -2,12 +2,16 @@
 export const prerender = true;
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Scatterplot from "../components/Scatterplot.svelte";
-import BarChart from "../components/BarChart.svelte";
 import LandlordCharts from "../components/LandlordCharts.svelte";
 
 // Fetch data at build time
 let csaFeatures: Record<string, unknown>[] = [];
-let landlordTop20: { plaintiff: string; evictions: number; not_evicted: number; total: number }[] = [];
+let landlordTop20: {
+  plaintiff: string;
+  evictions: number;
+  not_evicted: number;
+  total: number;
+}[] = [];
 let concentrationData: { tier: string; pct: number; color: string }[] = [];
 
 try {
@@ -15,14 +19,20 @@ try {
   const path = await import("path");
 
   // CSA features for scatterplots
-  const csvPath = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
+  const csvPath = path.resolve(
+    process.cwd(),
+    "analysis/outputs/csa_features.csv"
+  );
   if (fs.existsSync(csvPath)) {
     const lines = fs.readFileSync(csvPath, "utf-8").trim().split("\n");
     const headers = lines[0].split(",");
     csaFeatures = lines.slice(1).map((line) => {
       const vals = line.split(",");
       return Object.fromEntries(
-        headers.map((h, i) => [h.trim(), isNaN(Number(vals[i])) ? vals[i] : Number(vals[i])])
+        headers.map((h, i) => [
+          h.trim(),
+          isNaN(Number(vals[i])) ? vals[i] : Number(vals[i]),
+        ])
       );
     });
 
@@ -48,23 +58,38 @@ try {
 
   // landlord_master.csv — plaintiff + matched SDAT owner + warrant/eviction counts
   // Group by sdat_owner where matched, otherwise by plaintiff, to get one row per entity.
-  const masterPath = path.resolve(process.cwd(), "public/downloads/landlord_master.csv");
+  const masterPath = path.resolve(
+    process.cwd(),
+    "public/downloads/landlord_master.csv"
+  );
   if (fs.existsSync(masterPath)) {
-    const lines = fs.readFileSync(masterPath, "utf-8").trim().split("\n").slice(1);
+    const lines = fs
+      .readFileSync(masterPath, "utf-8")
+      .trim()
+      .split("\n")
+      .slice(1);
     // CSV fields: plaintiff,sdat_owner,total_warrants,total_evictions,warrants_matched_to_sdat,csa_count,csas_active
-    const parsed = lines.map((line) => {
-      const parts = line.match(/("(?:[^"]|"")*"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) ?? line.split(",");
-      const clean = (s: string) => s.replace(/^"|"$/g, "").replace(/""/g, '"').trim();
-      return {
-        plaintiff: clean(parts[0] ?? ""),
-        sdat_owner: clean(parts[1] ?? ""),
-        total_warrants: Number(parts[2] ?? 0),
-        total_evictions: Number(parts[3] ?? 0),
-      };
-    }).filter(r => r.total_warrants > 0);
+    const parsed = lines
+      .map((line) => {
+        const parts =
+          line.match(/("(?:[^"]|"")*"|[^,]+|(?<=,)(?=,)|(?<=,)$|^(?=,))/g) ??
+          line.split(",");
+        const clean = (s: string) =>
+          s.replace(/^"|"$/g, "").replace(/""/g, '"').trim();
+        return {
+          plaintiff: clean(parts[0] ?? ""),
+          sdat_owner: clean(parts[1] ?? ""),
+          total_warrants: Number(parts[2] ?? 0),
+          total_evictions: Number(parts[3] ?? 0),
+        };
+      })
+      .filter((r) => r.total_warrants > 0);
 
     // Merge rows that share the same SDAT owner
-    const entityMap = new Map<string, { label: string; total_warrants: number; total_evictions: number }>();
+    const entityMap = new Map<
+      string,
+      { label: string; total_warrants: number; total_evictions: number }
+    >();
     for (const r of parsed) {
       const key = r.sdat_owner || r.plaintiff;
       const label = r.sdat_owner
@@ -75,11 +100,17 @@ try {
         existing.total_warrants += r.total_warrants;
         existing.total_evictions += r.total_evictions;
       } else {
-        entityMap.set(key, { label, total_warrants: r.total_warrants, total_evictions: r.total_evictions });
+        entityMap.set(key, {
+          label,
+          total_warrants: r.total_warrants,
+          total_evictions: r.total_evictions,
+        });
       }
     }
 
-    const all = [...entityMap.values()].sort((a, b) => b.total_warrants - a.total_warrants);
+    const all = [...entityMap.values()].sort(
+      (a, b) => b.total_warrants - a.total_warrants
+    );
 
     landlordTop20 = all.slice(0, 20).map((r) => ({
       plaintiff: r.label,
@@ -90,15 +121,19 @@ try {
 
     const grandTotal = all.reduce((s, r) => s + r.total_warrants, 0);
     const pct = (n: number) => Math.round((n / grandTotal) * 100);
-    const top3   = all.slice(0, 3).reduce((s, r) => s + r.total_warrants, 0);
+    const top3 = all.slice(0, 3).reduce((s, r) => s + r.total_warrants, 0);
     const next17 = all.slice(3, 20).reduce((s, r) => s + r.total_warrants, 0);
     const next80 = all.slice(20, 100).reduce((s, r) => s + r.total_warrants, 0);
-    const rest   = all.slice(100).reduce((s, r) => s + r.total_warrants, 0);
+    const rest = all.slice(100).reduce((s, r) => s + r.total_warrants, 0);
     concentrationData = [
-      { tier: "Top 3",        pct: pct(top3),   color: "#b88500" },
-      { tier: "4th–20th",     pct: pct(next17),  color: "#d4a843" },
-      { tier: "21st–100th",   pct: pct(next80),  color: "#e6ce8e" },
-      { tier: `Remaining ${all.slice(100).length}`, pct: pct(rest), color: "#f5edda" },
+      { tier: "Top 3", pct: pct(top3), color: "#b88500" },
+      { tier: "4th–20th", pct: pct(next17), color: "#d4a843" },
+      { tier: "21st–100th", pct: pct(next80), color: "#e6ce8e" },
+      {
+        tier: `Remaining ${all.slice(100).length}`,
+        pct: pct(rest),
+        color: "#f5edda",
+      },
     ];
   }
 } catch {
@@ -118,9 +153,9 @@ try {
         <div class="display-stat">3,000+</div>
         <p class="lead">
           In a single month — December 2024 — Baltimore landlords filed more
-          than 3,000 eviction warrants. That's roughly <strong>one in every 83
-          households</strong>. But most of those warrants never resulted in an actual
-          eviction.
+          than 3,000 eviction warrants. That's roughly <strong
+            >one in every 83 households</strong
+          >. But most of those warrants never resulted in an actual eviction.
         </p>
       </div>
     </section>
@@ -165,8 +200,8 @@ try {
           </li>
         </ol>
         <p>
-          Our data covers step 3. Fewer than 10% of warrants reach step 4.
-          That gap is the central story.
+          Our data covers step 3. Fewer than 10% of warrants reach step 4. That
+          gap is the central story.
         </p>
       </div>
     </section>
@@ -190,7 +225,9 @@ try {
     <!-- 5. Which factors — BNIA correlations (setup) -->
     <section class="story__section story__section--warm">
       <div class="container">
-        <h2>When we look at <em>actual</em> evictions, the pattern is familiar</h2>
+        <h2>
+          When we look at <em>actual</em> evictions, the pattern is familiar
+        </h2>
         <p class="section-intro">
           BNIA's 2023 eviction data — which tracks formal evictions, not warrant
           filings — shows the expected correlations. Social determinants like
@@ -296,10 +333,11 @@ try {
         </div>
         <div class="callout">
           <p>
-            <strong>Even with a single month of data, our eviction measure
-            and BNIA's tell the same story:</strong> income and race predict
-            formally recorded evictions, but not warrant filings — where
-            ownership concentration dominates instead.
+            <strong
+              >Even with a single month of data, our eviction measure and BNIA's
+              tell the same story:</strong
+            > income and race predict formally recorded evictions, but not warrant
+            filings — where ownership concentration dominates instead.
           </p>
         </div>
       </div>
@@ -310,7 +348,9 @@ try {
       <div class="container">
         <h2>Who files the most warrants?</h2>
         <p class="section-intro">
-          A handful of landlords are responsible for a <strong>disproportionate</strong>
+          A handful of landlords are responsible for a <strong
+            >disproportionate</strong
+          >
           share of filings — and few of those warrants result in formal evictions.
         </p>
         <LandlordCharts
@@ -331,7 +371,10 @@ try {
             <ul>
               <li>Eviction records follow them for years</li>
               <li>Cases affect housing and credit access</li>
-              <li>Difficult to expunge or seal cases decided in favor of the landlord</li>
+              <li>
+                Difficult to expunge or seal cases decided in favor of the
+                landlord
+              </li>
             </ul>
           </div>
           <div class="comparison__col">
@@ -358,8 +401,8 @@ try {
       <div class="container container--prose" style="text-align:center">
         <h2>Explore the data yourself</h2>
         <p>
-          The dataset is available for download and via a documented API.
-          All tenant names are removed; addresses are truncated.
+          The dataset is available for download and via a documented API. All
+          tenant names are removed; addresses are truncated.
         </p>
         <div class="cta-row">
           <a href="/dashboard" class="btn btn--amber">Explore the map</a>

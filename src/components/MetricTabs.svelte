@@ -1,5 +1,9 @@
 <script lang="ts">
-  import { activeMetric, selectedCsa, METRIC_LABELS } from "../stores/dashboard";
+  import {
+    activeMetric,
+    selectedCsa,
+    METRIC_LABELS,
+  } from "../stores/dashboard";
   import type { MetricKey } from "../lib/types";
 
   const metrics: MetricKey[] = [
@@ -12,7 +16,7 @@
 
 <div class="sticky-bar">
   <div class="metric-tabs" role="tablist" aria-label="Map metric">
-    {#each metrics as metric}
+    {#each metrics as metric (metric)}
       <button
         role="tab"
         aria-selected={$activeMetric === metric}
@@ -28,7 +32,11 @@
     <div class="selected-csa">
       <span class="selected-csa__label">Selected:</span>
       <span class="selected-csa__name">{$selectedCsa}</span>
-      <button class="selected-csa__clear" onclick={() => selectedCsa.set(null)} aria-label="Clear selection">
+      <button
+        class="selected-csa__clear"
+        onclick={() => selectedCsa.set(null)}
+        aria-label="Clear selection"
+      >
         ✕
       </button>
     </div>

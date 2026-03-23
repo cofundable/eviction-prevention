@@ -15,7 +15,10 @@ export function hashName(name: string): string {
  * Input: street = "123 E 25TH ST", zip = "21218"
  * Output: "E 25th St 21218"
  */
-export function truncateAddress(street: string | null, zip: string | null): string {
+export function truncateAddress(
+  street: string | null,
+  zip: string | null
+): string {
   if (!street) return zip ?? "";
   // Remove leading house number (digits, optional fractional/unit)
   const withoutNumber = street.replace(/^\d+[-\d/]*\s+/, "").trim();
@@ -31,10 +34,9 @@ export function truncateAddress(street: string | null, zip: string | null): stri
  * Mutates a deep clone — does not modify the input.
  */
 export function redactDetailsJson(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  json: Record<string, any>,
+  json: Record<string, unknown>,
   tenantName: string
-): Record<string, any> {
+): Record<string, unknown> {
   const clone = JSON.parse(JSON.stringify(json)) as typeof json;
   const hash = hashName(tenantName);
 

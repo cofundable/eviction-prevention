@@ -57,8 +57,9 @@ describe("redactDetailsJson", () => {
       ],
     };
     const result = redactDetailsJson(input, "Jane Smith");
-    expect(result.parties[1].name).toMatch(/^\[REDACTED:/);
-    expect(result.parties[0].name).toBe("Waverly Apts");
+    const parties = result.parties as Array<{ type: string; name: string }>;
+    expect(parties[1].name).toMatch(/^\[REDACTED:/);
+    expect(parties[0].name).toBe("Waverly Apts");
   });
 
   it("does not modify the original object", () => {
