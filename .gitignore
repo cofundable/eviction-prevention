@@ -1,6 +1,7 @@
 # build output
 dist/
 coverage/
+.wrangler/
 
 # generated types
 .astro/
@@ -27,3 +28,13 @@ pnpm-debug.log*
 
 # local data files
 data/
+*.db
+
+# analysis pipeline outputs and inputs
+analysis/outputs/
+analysis/*.duckdb
+analysis/data/
+analysis/eviction_analysis.html
+analysis/neighborhood_analysis.html
+
+.dev.vars

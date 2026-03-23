@@ -10,19 +10,24 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - uses: pnpm/action-setup@v5
+        with:
+          version: latest
+
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
           node-version: 20
+          cache: pnpm
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: pnpm build
 
       - name: Run checks
-        run: npm run checks
+        run: pnpm run checks
 
       - name: Run tests
-        run: npm run test:coverage
+        run: pnpm run test:coverage

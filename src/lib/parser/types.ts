@@ -1,20 +1,22 @@
-import type * as cheerio from "cheerio";
+import type { CheerioAPI, Cheerio as CheerioType } from "cheerio";
 
 /**
  * Type alias for cheerio Root (returned from cheerio.load()).
  * This is the selector function that can be used to query the DOM.
  */
-export type Root = cheerio.Root;
+export type Root = CheerioAPI;
 
 /**
  * Type alias for cheerio selection/wrapper.
  */
-export type Cheerio = cheerio.Cheerio;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Cheerio = CheerioType<any>;
 
 /**
  * Type alias for cheerio element.
  */
-export type Element = cheerio.Element;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Element = any;
 
 export interface CaseDetails {
   courtSystem?: string;
@@ -47,7 +49,10 @@ export enum PartyType {
 export interface Party {
   partyType?: PartyType | string;
   name: string;
+  nameNormalized?: string;
+  nameParts?: string[]; // Split by T/A, TA, C/O, etc.
   address: Address;
+  addressNormalized?: Address;
   appearanceDate?: string;
   representedParty?: string;
 }

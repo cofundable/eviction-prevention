@@ -1,0 +1,362 @@
+---
+title: "The Social Determinants of Eviction"
+subtitle: "Baltimore Neighborhoods, 2024"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    theme: cosmo
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+
+import pathlib
+import json
+import duckdb
+import numpy as np
+import pandas as pd
+import geopandas as gpd
+import plotly.express as px
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+ROOT = pathlib.Path(".").resolve()  # analysis/
+DATA = ROOT.parent / "data"
+DB_PATH = ROOT.parent / "evictions.db"
+
+# --- Load neighborhood features (December 2024 ETL output) ---
+df = pd.read_csv(ROOT / "outputs" / "neighborhood_features.csv")
+df["neighborhood"] = df["neighborhood"].str.strip()
+
+# --- Load owner eviction data ---
+owners = pd.read_csv(ROOT / "outputs" / "owner_eviction_counts.csv")
+owners["owner"] = owners["owner"].str.strip()
+
+plaintiff_map = pd.read_csv(ROOT / "outputs" / "plaintiff_to_owner.csv")
+plaintiff_map["sdat_owner"] = plaintiff_map["sdat_owner"].str.strip()
+plaintiff_map["plaintiff"] = plaintiff_map["plaintiff"].str.strip()
+
+# --- Load neighborhoods GeoJSON ---
+gdf = gpd.read_file(DATA / "neighborhoods.geojson")
+
+# Merge GeoDataFrame with feature table
+gdf = gdf.merge(df, left_on="Name", right_on="neighborhood", how="left")
+
+# Export merged GeoJSON for plotly (need feature id = Name)
+geo_dict = json.loads(gdf[["Name", "geometry"]].to_json())
+for feature, row in zip(geo_dict["features"], gdf.itertuples()):
+    feature["id"] = row.Name
+
+# --- Load full-year monthly data from DB ---
+con = duckdb.connect(str(DB_PATH), read_only=True)
+monthly = con.execute(
+    "SELECT strftime(CAST(event_date AS DATE), '%Y-%m') AS month, "
+    "COUNT(*) AS warrants FROM warrant_filings GROUP BY month ORDER BY month"
+).df()
+con.close()
+
+# --- Key summary stats ---
+dec_warrants = int(df["eviction_count"].sum())
+year = monthly["month"].str[:4].iloc[0]
+year_total = int(monthly["warrants"].sum())
+
+# --- Shared style ---
+PLOTLY_TEMPLATE = "plotly_white"
+MAPBOX_STYLE = "carto-positron"
+MAP_CENTER = {"lat": 39.2904, "lon": -76.6122}
+MAP_ZOOM = 10
+COLOR_SEQ = px.colors.sequential.Reds
+```
+
+## The Scale of the Problem
+
+In **`{python} year`**, Baltimore City courts issued **`{python} f"{year_total:,}"` eviction warrants** — roughly **`{python} f"{year_total // 12:,}"` per month** on average. The chart below shows how that volume shifted across the year.
+
+```{python}
+#| label: monthly-trend
+
+fig = px.bar(
+    monthly,
+    x="month",
+    y="warrants",
+    labels={"month": "Month", "warrants": "Eviction Warrants Filed"},
+    template=PLOTLY_TEMPLATE,
+    color_discrete_sequence=["#c0392b"],
+)
+fig.update_layout(
+    title="Eviction Warrants Filed by Month — Baltimore City 2024",
+    xaxis_title=None,
+    yaxis_title="Warrants Filed",
+    margin=dict(t=50, b=40),
+    height=380,
+)
+fig.show()
+```
+
+*The detailed neighborhood and landlord analysis in the sections below is based on December 2024 data (`{python} dec_warrants` warrants), where address geocoding and court record matching are most complete.*
+
+---
+
+## A Different Framework
+
+Most conversations about eviction focus on tenant behavior — missed payments, lease violations. But the *where* of eviction tells a different story.
+
+Eviction rates in Baltimore track almost perfectly with a set of conditions that tenants didn't choose: what neighborhood they were born in, whether it was redlined in the 1930s, how concentrated landlord ownership is in their block. These are **social determinants of eviction** — upstream structural forces that predict who gets a warrant served at their door.
+
+This analysis maps those forces at the neighborhood level — Baltimore's 279 neighborhoods — using December 2024 court data spatially joined to neighborhood boundaries and merged with Census P3/P4/P12/H1/H4 demographic data and SDAT property records.
+
+---
+
+## Where Evictions Happen
+
+```{python}
+#| label: eviction-map
+
+fig = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="Name",
+    color="eviction_rate_per_1k_hh",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=MAP_ZOOM,
+    opacity=0.75,
+    hover_name="Name",
+    hover_data={
+        "eviction_count": True,
+        "eviction_rate_per_1k_hh": ":.1f",
+        "Name": False,
+    },
+    labels={
+        "eviction_rate_per_1k_hh": "Warrants per 1k HH",
+        "eviction_count": "Warrants (Dec 2024)",
+    },
+)
+fig.update_layout(
+    title="Eviction Warrant Rate by Neighborhood (December 2024)",
+    margin=dict(t=50, b=0, l=0, r=0),
+    height=520,
+    coloraxis_colorbar=dict(title="Warrants<br>per 1k HH"),
+)
+fig.show()
+```
+
+The clustering is not random. High-rate neighborhoods form a pattern that should be familiar to anyone who has studied Baltimore's geography of inequality.
+
+---
+
+## Overlapping Geographies
+
+Eviction maps and racial composition maps in Baltimore look nearly identical — not because race causes eviction, but because both reflect the same underlying history of segregated investment and disinvestment.
+
+```{python}
+#| label: side-by-side-maps
+
+fig1 = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="Name",
+    color="eviction_rate_per_1k_hh",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=9,
+    opacity=0.75,
+    hover_name="Name",
+    labels={"eviction_rate_per_1k_hh": "Warrants per 1k HH"},
+)
+fig1.update_layout(
+    title="Eviction Rate",
+    margin=dict(t=40, b=0, l=0, r=0),
+    height=420,
+    coloraxis_colorbar=dict(title="Warrants<br>per 1k HH"),
+)
+fig1.show()
+
+fig2 = px.choropleth_mapbox(
+    gdf,
+    geojson=geo_dict,
+    locations="Name",
+    color="pct_black",
+    color_continuous_scale="Blues",
+    mapbox_style=MAPBOX_STYLE,
+    center=MAP_CENTER,
+    zoom=9,
+    opacity=0.75,
+    hover_name="Name",
+    labels={"pct_black": "% Black"},
+)
+fig2.update_layout(
+    title="% Black Residents",
+    margin=dict(t=40, b=0, l=0, r=0),
+    height=420,
+    coloraxis_colorbar=dict(title="% Black"),
+)
+fig2.show()
+```
+
+> **Note:** A third map showing 1930s HOLC redlining boundaries would complete this comparison. Those boundaries are available from the [Mapping Inequality project](https://dsl.richmond.edu/panorama/redlining/) — overlay them and the three maps are nearly coextensive.
+
+---
+
+## What the Data Shows
+
+Each dot below represents one of Baltimore's 279 neighborhoods (filtered to those with at least 100 residents). The relationships are not subtle.
+
+### Race and Eviction
+
+```{python}
+#| label: scatter-race
+
+df_plot = df[df["total_pop"] >= 100].copy()
+
+fig = px.scatter(
+    df_plot,
+    x="pct_black",
+    y="eviction_rate_per_1k_hh",
+    hover_name="neighborhood",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black": "% Black Residents",
+        "eviction_rate_per_1k_hh": "Warrants per 1,000 HH",
+    },
+    title="Racial composition and eviction rate",
+)
+fig.update_traces(marker=dict(size=7, opacity=0.7, color="#c0392b"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+### Ownership Concentration and Eviction
+
+```{python}
+#| label: scatter-concentration
+
+df_plot = df[df["total_pop"] >= 100].copy()
+
+fig = px.scatter(
+    df_plot,
+    x="ownership_concentration_pct",
+    y="eviction_rate_per_1k_hh",
+    hover_name="neighborhood",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "eviction_rate_per_1k_hh": "Warrants per 1,000 HH",
+    },
+    title="Ownership concentration and eviction rate",
+)
+fig.update_traces(marker=dict(size=7, opacity=0.7, color="#2c3e50"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+### Renter Share and Eviction
+
+```{python}
+#| label: scatter-renter
+
+df_plot = df[df["total_pop"] >= 100].copy()
+
+fig = px.scatter(
+    df_plot,
+    x="pct_renter",
+    y="eviction_rate_per_1k_hh",
+    hover_name="neighborhood",
+    trendline="ols",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_renter": "% Renter-Occupied Households",
+        "eviction_rate_per_1k_hh": "Warrants per 1,000 HH",
+    },
+    title="Renter share and eviction rate",
+)
+fig.update_traces(marker=dict(size=7, opacity=0.7, color="#8e44ad"),
+                  selector=dict(mode="markers"))
+fig.update_layout(height=430, margin=dict(t=60, b=40))
+fig.show()
+```
+
+---
+
+## Who Is Doing the Evicting
+
+A small number of landlords account for a disproportionate share of eviction filings. The 20 entities below filed the most warrants in December 2024.
+
+```{python}
+#| label: top-evictors-bar
+
+top20 = owners.head(20).copy()
+top20["owner_label"] = top20["owner"].str.title().str.strip()
+
+fig = px.bar(
+    top20.sort_values("eviction_count"),
+    x="eviction_count",
+    y="owner_label",
+    orientation="h",
+    template=PLOTLY_TEMPLATE,
+    labels={
+        "eviction_count": "Warrants Filed (Dec 2024)",
+        "owner_label": "",
+    },
+    title="Top 20 Landlords by Eviction Warrant Count — December 2024",
+    color="eviction_count",
+    color_continuous_scale=["#fadbd8", "#c0392b"],
+)
+fig.update_layout(
+    height=560,
+    margin=dict(t=60, l=250, b=40),
+    showlegend=False,
+    coloraxis_showscale=False,
+)
+fig.update_traces(
+    text=top20.sort_values("eviction_count")["eviction_count"],
+    textposition="outside",
+)
+fig.show()
+```
+
+### Court Name → SDAT Owner Matching
+
+Court filings often use abbreviated or alternate names. The table below shows the top plaintiffs as they appear in court records alongside the matched SDAT property owner.
+
+```{python}
+#| label: plaintiff-table
+
+top20_map = plaintiff_map.head(20).copy()
+top20_map.columns = ["Court Filing Name", "Warrants", "SDAT Owner", "Units Matched"]
+top20_map = top20_map.reset_index(drop=True)
+top20_map.index += 1
+
+top20_map.style \
+    .set_table_styles([
+        {"selector": "thead th", "props": [("background-color", "#2c3e50"), ("color", "white"), ("font-weight", "bold")]},
+        {"selector": "tbody tr:nth-child(even)", "props": [("background-color", "#f9f9f9")]},
+        {"selector": "td, th", "props": [("padding", "6px 12px"), ("text-align", "left")]},
+    ]) \
+    .bar(subset=["Warrants"], color="#c0392b", vmin=0)
+```
+
+---
+
+## What This Means
+
+The data points to three levers for reducing eviction in Baltimore:
+
+1. **Ownership concentration** is among the strongest predictors of eviction rates in the data. Policies that disperse ownership (community land trusts, right-of-first-refusal for tenants, LLC transparency requirements) address the root structural driver.
+
+2. **A small number of landlords** account for a disproportionate share of filings across all 279 neighborhoods. Targeted intervention — whether mediation programs, inspection priority, or rental registry enforcement — can reach a large fraction of evictions by focusing on 20 entities.
+
+3. **The data infrastructure to do this work is improving but incomplete.** December 2024 is the month where geocoding and court record matching are most complete. A fully geocoded, real-time eviction dataset — publicly accessible — would let advocates, journalists, and policymakers track these patterns continuously rather than after the fact.
+
+Eviction is not an inevitable consequence of market conditions. It is a policy choice, made building by building, court date by court date. The geography of that choice is visible in the maps above.

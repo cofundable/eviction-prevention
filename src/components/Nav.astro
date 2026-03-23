@@ -1,0 +1,96 @@
+---
+const links = [
+  { href: "/dashboard", label: "Dashboard" },
+  { href: "/story", label: "Findings" },
+  { href: "/data", label: "Data" },
+  { href: "/contact", label: "Contact" },
+];
+const pathname = Astro.url.pathname;
+---
+
+<nav class="nav">
+  <div class="nav__inner container">
+    <a href="/" class="nav__logo"> Eviction Data </a>
+    <ul class="nav__links">
+      {
+        links.map(({ href, label }) => (
+          <li>
+            <a
+              href={href}
+              class:list={[
+                "nav__link",
+                { "nav__link--active": pathname.startsWith(href) },
+              ]}
+            >
+              {label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</nav>
+
+<style>
+  .nav {
+    background: var(--color-brown-700);
+    padding-block: var(--space-4);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .nav__inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-6);
+  }
+
+  .nav__logo {
+    color: var(--color-text-on-dark);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-base);
+    text-decoration: none;
+    flex-shrink: 0;
+    letter-spacing: 0.01em;
+  }
+
+  .nav__logo:hover {
+    color: var(--color-amber-300);
+    text-decoration: none;
+  }
+
+  .nav__links {
+    display: flex;
+    list-style: none;
+    gap: var(--space-6);
+  }
+
+  .nav__link {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+    padding-block: var(--space-1);
+    border-bottom: 2px solid transparent;
+  }
+
+  .nav__link:hover,
+  .nav__link--active {
+    color: var(--color-text-on-dark);
+    text-decoration: none;
+    border-bottom-color: var(--color-amber-400);
+  }
+
+  @media (max-width: 640px) {
+    .nav__logo {
+      font-size: var(--text-xs);
+    }
+    .nav__links {
+      gap: var(--space-4);
+    }
+  }
+</style>

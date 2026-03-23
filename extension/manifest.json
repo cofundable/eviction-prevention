@@ -1,0 +1,15 @@
+{
+  "manifest_version": 3,
+  "name": "Save Case HTML",
+  "version": "1.0",
+  "permissions": ["activeTab", "scripting"],
+  "commands": {
+    "save-case": {
+      "suggested_key": { "default": "Ctrl+Shift+S" },
+      "description": "Save case HTML"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+}

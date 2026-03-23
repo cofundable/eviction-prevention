@@ -1,0 +1,115 @@
+---
+
+---
+
+<footer class="footer">
+  <div class="footer__inner container">
+    <p class="footer__tagline">
+      A civic data project on Baltimore City eviction warrants.
+    </p>
+    <div class="footer__links">
+      <div class="footer__group">
+        <span class="footer__group-label">Data sources</span>
+        <a
+          href="https://app.powerbigov.us/view?r=eyJrIjoiMmYyNWMyMGItOTg5My00Y2ZiLTg4ZjctNmM2MjE2ZmZhZWZiIiwidCI6IjdkM2I4ZDAwLWY5YmUtNDZlNy05NDYwLTRlZjJkOGY3MzE0OSJ9"
+          target="_blank"
+          rel="noopener noreferrer">Maryland Eviction Dashboard</a
+        >
+        <a
+          href="https://casesearch.courts.state.md.us"
+          target="_blank"
+          rel="noopener noreferrer">Maryland Case Search</a
+        >
+        <a
+          href="https://bniajfi.org/vital_signs/"
+          target="_blank"
+          rel="noopener noreferrer">BNIA Vital Signs</a
+        >
+        <a
+          href="https://sdat.dat.maryland.gov"
+          target="_blank"
+          rel="noopener noreferrer">Maryland SDAT</a
+        >
+        <a
+          href="https://data.baltimorecity.gov"
+          target="_blank"
+          rel="noopener noreferrer">Open Baltimore</a
+        >
+      </div>
+      <div class="footer__group">
+        <span class="footer__group-label">Project</span>
+        <a href="/data">Download the data</a>
+        <a href="https://github.com" target="_blank" rel="noopener noreferrer"
+          >GitHub</a
+        >
+        <a href="/contact">Contact</a>
+      </div>
+    </div>
+    <p class="footer__note">
+      Tenant names are never published. Addresses are truncated to street name
+      and zip code. Data covers December 2024 warrant filings.
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--color-brown-900);
+    color: rgba(255, 255, 255, 0.7);
+    padding-block: var(--space-12);
+    margin-top: auto;
+  }
+
+  .footer__inner {
+    display: grid;
+    gap: var(--space-8);
+  }
+
+  .footer__tagline {
+    color: var(--color-text-on-dark);
+    font-weight: var(--font-weight-medium);
+    font-size: var(--text-base);
+    max-width: none;
+  }
+
+  .footer__links {
+    display: flex;
+    gap: var(--space-16);
+    flex-wrap: wrap;
+  }
+
+  .footer__group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
+
+  .footer__group-label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-amber-300);
+    margin-bottom: var(--space-1);
+  }
+
+  .footer__group a {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: var(--text-sm);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+
+  .footer__group a:hover {
+    color: var(--color-text-on-dark);
+    text-decoration: none;
+  }
+
+  .footer__note {
+    font-size: var(--text-xs);
+    color: rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: var(--space-6);
+    max-width: none;
+  }
+</style>

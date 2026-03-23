@@ -1,16 +1,273 @@
 ---
-
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width" />
-    <meta name="generator" content={Astro.generator} />
-    <title>Astro</title>
-  </head>
-  <body>
-    <h1>Astro</h1>
-  </body>
-</html>
+<BaseLayout title="Home">
+  <section class="hero">
+    <div class="container">
+      <h1 class="hero__heading">The Social Determinants of Eviction</h1>
+      <div class="hero__stat">3,000+</div>
+      <p class="hero__sub">
+        Eviction warrants filed in a single month in Baltimore City — and the
+        patterns that explain who's being targeted.
+      </p>
+      <div class="hero__ctas">
+        <a href="/dashboard" class="btn btn--primary">Explore the data</a>
+        <a href="/story" class="btn btn--secondary">Read the findings</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="about">
+    <div class="container container--prose">
+      <h2>About this project</h2>
+      <p>
+        In 2022, Maryland passed a transparency law requiring eviction case data
+        to be publicly accessible through the state's court system. This project
+        collects, analyzes, and publishes that data for Baltimore City — making
+        it legible to researchers, advocates, and residents.
+      </p>
+      <p>
+        The data covers ~3,000 eviction warrants filed in December 2024,
+        cross-referenced with BNIA neighborhood demographics, Maryland SDAT
+        property ownership records, and geocoded addresses. The central finding:
+        <strong>
+          what predicts eviction depends entirely on how you measure it.
+        </strong>
+      </p>
+      <p>
+        Warrant filings are driven by ownership concentration — not race or
+        income. Actual evictions tell the opposite story.
+      </p>
+    </div>
+  </section>
+
+  <section class="cards">
+    <div class="container">
+      <div class="cards__grid">
+        <a href="/dashboard" class="card">
+          <h3 class="card__title">Neighborhood Dashboard</h3>
+          <p class="card__desc">
+            Explore eviction rates, income, racial composition, and ownership
+            concentration across Baltimore's 55 Community Statistical Areas.
+          </p>
+          <span class="card__cta">Explore →</span>
+        </a>
+        <a href="/story" class="card">
+          <h3 class="card__title">Data Story</h3>
+          <p class="card__desc">
+            A guided analysis: who files the most warrants, which neighborhoods
+            are most affected, and what the data reveals about landlord
+            behavior.
+          </p>
+          <span class="card__cta">Read →</span>
+        </a>
+        <a href="/data" class="card card--small">
+          <h3 class="card__title">Download the data</h3>
+          <p class="card__desc">
+            Sanitized CSVs and a documented API for researchers and journalists.
+          </p>
+          <span class="card__cta">View →</span>
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* Hero */
+  .hero {
+    background: var(--color-brown-700);
+    color: var(--color-text-on-dark);
+    padding-block: var(--space-24);
+    text-align: center;
+  }
+
+  .hero__stat {
+    font-size: var(--text-display);
+    font-weight: var(--font-weight-extrabold);
+    color: var(--color-amber-400);
+    line-height: 1;
+    margin-bottom: var(--space-4);
+  }
+
+  .hero__heading {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-on-dark);
+    margin-bottom: var(--space-6);
+    max-width: 800px;
+    margin-inline: auto;
+  }
+
+  .hero__sub {
+    font-size: var(--text-lg);
+    color: rgba(255, 255, 255, 0.8);
+    max-width: 600px;
+    margin-inline: auto;
+    margin-bottom: var(--space-8);
+    line-height: var(--leading-normal);
+  }
+
+  .hero__ctas {
+    display: flex;
+    gap: var(--space-4);
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: var(--space-3) var(--space-8);
+    border-radius: var(--border-radius-sm);
+    font-weight: var(--font-weight-semibold);
+    font-size: var(--text-base);
+    text-decoration: none;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast);
+  }
+
+  .btn--primary {
+    background: var(--color-amber-500);
+    color: var(--color-brown-900);
+  }
+  .btn--primary:hover {
+    background: var(--color-amber-400);
+    text-decoration: none;
+  }
+
+  .btn--secondary {
+    background: transparent;
+    color: var(--color-text-on-dark);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+  }
+  .btn--secondary:hover {
+    background: rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+  }
+
+  /* About */
+  .about {
+    padding-block: var(--space-16);
+    background: var(--color-surface-alt);
+  }
+
+  .about h2 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-6);
+  }
+
+  .about p {
+    margin-bottom: var(--space-4);
+    line-height: var(--leading-loose);
+  }
+
+  /* Cards */
+  .cards {
+    padding-block: var(--space-16);
+  }
+
+  .cards__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-6);
+  }
+
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-lg);
+    padding: var(--space-8);
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition:
+      box-shadow var(--transition-normal),
+      border-color var(--transition-normal);
+  }
+
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    border-color: var(--color-amber-400);
+    text-decoration: none;
+  }
+
+  .card__icon {
+    font-size: 2rem;
+  }
+
+  .card__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-heading);
+  }
+
+  .card__desc {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-normal);
+    flex: 1;
+  }
+
+  .card__cta {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-amber-600);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    background: var(--color-brown-900);
+    padding-block: var(--space-12);
+  }
+
+  .stats-bar__grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-8);
+    text-align: center;
+  }
+
+  .stat__value {
+    display: block;
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-extrabold);
+    color: var(--color-amber-400);
+    margin-bottom: var(--space-2);
+  }
+
+  .stat__label {
+    display: block;
+    font-size: var(--text-sm);
+    color: rgba(255, 255, 255, 0.65);
+  }
+
+  @media (max-width: 900px) {
+    .cards__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+    .stats-bar__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .hero__heading {
+      font-size: var(--text-3xl);
+    }
+    .hero__stat {
+      font-size: 3rem;
+    }
+    .cards__grid {
+      grid-template-columns: 1fr;
+    }
+    .stats-bar__grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

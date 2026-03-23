@@ -1,0 +1,73 @@
+---
+export const prerender = true;
+import BaseLayout from "../layouts/BaseLayout.astro";
+import MetricTabs from "../components/MetricTabs.svelte";
+import ChoroplethMap from "../components/ChoroplethMap.svelte";
+import DashboardPanel from "../components/DashboardPanel.svelte";
+---
+
+<BaseLayout
+  title="Dashboard"
+  description="Explore eviction warrant data across Baltimore's 55 Community Statistical Areas."
+>
+  <div class="dashboard">
+    <header class="dashboard__header container">
+      <h1>Neighborhood Dashboard</h1>
+      <p>
+        Explore eviction warrant rates, income, racial composition, and
+        ownership concentration across Baltimore's 55 Community Statistical
+        Areas. Click any neighborhood to see details.
+      </p>
+    </header>
+
+    <div class="dashboard__sticky">
+      <MetricTabs client:load />
+    </div>
+
+    <div class="dashboard__map">
+      <ChoroplethMap client:load />
+    </div>
+
+    <div class="dashboard__panel container">
+      <DashboardPanel client:load />
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .dashboard__header {
+    padding-block: var(--space-8);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .dashboard__header h1 {
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-2);
+  }
+
+  .dashboard__header p {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    max-width: none;
+  }
+
+  .dashboard__sticky {
+    position: sticky;
+    top: 56px; /* nav height */
+    z-index: 20;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .dashboard__map {
+    height: 520px;
+    border-bottom: 1px solid var(--color-border);
+    padding: var(--space-4);
+  }
+
+  .dashboard__panel {
+    padding-block: var(--space-16);
+    padding-inline: var(--space-8);
+  }
+</style>

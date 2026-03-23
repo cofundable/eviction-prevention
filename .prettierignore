@@ -4,6 +4,12 @@ node_modules/
 # Build outputs
 dist/
 .astro/
+.wrangler/
+.svelte-kit/
+
+# Data pipeline
+analysis/
+extension/
 
 # Test mocks (preserve original formatting)
 __tests__/mocks/

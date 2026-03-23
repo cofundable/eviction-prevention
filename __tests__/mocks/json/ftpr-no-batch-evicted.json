@@ -12,8 +12,18 @@
     {
       "partyType": "agent",
       "name": "WILLIAMS, DAVID L",
+      "nameNormalized": "WILLIAMS DAVID L",
+      "nameParts": [
+        "WILLIAMS DAVID L"
+      ],
       "address": {
         "street": "789 ELM STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21207"
+      },
+      "addressNormalized": {
+        "street": "789 ELM ST",
         "city": "BALTIMORE",
         "state": "MD",
         "zipCode": "21207"
@@ -22,8 +32,18 @@
     {
       "partyType": "landlord",
       "name": "SMITH, THOMAS",
+      "nameNormalized": "SMITH THOMAS",
+      "nameParts": [
+        "SMITH THOMAS"
+      ],
       "address": {
         "street": "123 MAIN STREET",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21207"
+      },
+      "addressNormalized": {
+        "street": "123 MAIN ST",
         "city": "BALTIMORE",
         "state": "MD",
         "zipCode": "21207"
@@ -32,8 +52,18 @@
     {
       "partyType": "tenant",
       "name": "DOE, ROBERT M",
+      "nameNormalized": "DOE ROBERT M",
+      "nameParts": [
+        "DOE ROBERT M"
+      ],
       "address": {
         "street": "456 OAK AVENUE",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21208"
+      },
+      "addressNormalized": {
+        "street": "456 OAK AVE",
         "city": "BALTIMORE",
         "state": "MD",
         "zipCode": "21208"
@@ -42,8 +72,18 @@
     {
       "partyType": "tenant",
       "name": "JONES, JAMES K",
+      "nameNormalized": "JONES JAMES K",
+      "nameParts": [
+        "JONES JAMES K"
+      ],
       "address": {
         "street": "456 OAK AVENUE",
+        "city": "BALTIMORE",
+        "state": "MD",
+        "zipCode": "21208"
+      },
+      "addressNormalized": {
+        "street": "456 OAK AVE",
         "city": "BALTIMORE",
         "state": "MD",
         "zipCode": "21208"

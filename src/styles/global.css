@@ -1,0 +1,179 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap");
+
+/* ─── Reset ─────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Design tokens ──────────────────────────────────────────────────────── */
+:root {
+  /* Primary palette — ochre/brown family */
+  --color-brown-900: #3d302e;
+  --color-brown-700: #5e4e4b;
+  --color-brown-500: #7a6a66;
+  --color-brown-300: #a89a96;
+  --color-brown-100: #ede8e6;
+
+  /* Accent palette — amber/gold family */
+  --color-amber-700: #8b6914;
+  --color-amber-600: #c89b3c;
+  --color-amber-500: #d4a843;
+  --color-amber-400: #dabb6a;
+  --color-amber-300: #e6ce8e;
+  --color-amber-100: #f5edda;
+  --color-amber-50: #fbf7ef;
+
+  /* Semantic */
+  --color-text-primary: #5e4e4b;
+  --color-text-heading: #3d302e;
+  --color-text-secondary: #7a6a66;
+  --color-text-muted: #a89a96;
+  --color-text-on-dark: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-alt: #fbf7ef;
+  --color-surface-warm: #f5edda;
+  --color-border: #e0d8d4;
+  --color-border-subtle: #ede8e6;
+
+  /* Chart-specific */
+  --color-chart-warrant: #d4a843;
+  --color-chart-eviction: #8b6914;
+  --color-chart-scatter-bnia: #6b9bd2;
+  --color-chart-scatter-warrant: #c89b3c;
+  --color-chart-regression: #5e4e4b;
+  --color-chart-highlight: #c89b3c;
+
+  /* Choropleth sequential scale */
+  --color-scale-1: #fbf7ef;
+  --color-scale-2: #f5edda;
+  --color-scale-3: #e6ce8e;
+  --color-scale-4: #d4a843;
+  --color-scale-5: #c89b3c;
+  --color-scale-6: #8b6914;
+  --color-scale-7: #5e4e4b;
+
+  /* Typography */
+  --font-sans: "Poppins", system-ui, -apple-system, sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-3xl: 2rem;
+  --text-4xl: 2.5rem;
+  --text-display: 4rem;
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.6;
+  --leading-loose: 1.8;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+  --space-24: 6rem;
+
+  /* Layout */
+  --max-width-prose: 720px;
+  --max-width-wide: 1200px;
+  --max-width-full: 1400px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --shadow-sm:
+    0 1px 3px rgba(94, 78, 75, 0.06), 0 1px 2px rgba(94, 78, 75, 0.04);
+  --shadow-md: 0 4px 12px rgba(94, 78, 75, 0.08);
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+}
+
+/* ─── Base typography ────────────────────────────────────────────────────── */
+html {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  line-height: var(--leading-normal);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--color-text-heading);
+  line-height: var(--leading-tight);
+  font-weight: var(--font-weight-bold);
+}
+
+a {
+  color: var(--color-amber-600);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p {
+  max-width: var(--max-width-prose);
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* ─── Utility classes ────────────────────────────────────────────────────── */
+.container {
+  width: 100%;
+  max-width: var(--max-width-wide);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+.container--prose {
+  max-width: var(--max-width-prose);
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

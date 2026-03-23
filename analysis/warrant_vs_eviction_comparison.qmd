@@ -1,0 +1,411 @@
+---
+title: "Warrant Filings vs. Actual Evictions"
+subtitle: "Comparing measures of eviction burden across Baltimore CSAs, 2024"
+format:
+  html:
+    embed-resources: true
+    code-fold: true
+    theme: cosmo
+execute:
+  echo: false
+  warning: false
+---
+
+```{python}
+#| label: setup
+#| include: false
+
+import pathlib
+import json
+import pandas as pd
+import geopandas as gpd
+import plotly.express as px
+from scipy import stats
+
+ROOT = pathlib.Path(".").resolve()
+DATA = ROOT.parent / "data"
+
+# --- Load CSA features ---
+df = pd.read_csv(ROOT / "outputs" / "csa_features.csv")
+df["csa2010"] = df["csa2010"].str.strip()
+
+# --- Load BNIA actual eviction rate (2023, per 1k residents) ---
+bnia = pd.read_csv(DATA / "bnia_evictions.csv")
+bnia["csa2010"] = bnia["CSA2010"].str.strip()
+df = df.merge(bnia[["csa2010", "evict23"]], on="csa2010", how="left")
+df = df.rename(columns={"evict23": "bnia_eviction_rate"})
+
+# --- Load GeoJSON ---
+CSA_RENAME = {
+    "Greater Lauraville":      "Lauraville",
+    "Orchard Ridge/Armistead": "Claremont/Armistead",
+    "Pigtown/Carroll Park":    "Washington Village/Pigtown",
+    "Oliver/Johnston Square":  "Greenmount East",
+    "Hampden/Remington":       "Medfield/Hampden/Woodberry/Remington",
+    "Greektown/Bayview":       "Orangeville/East Highlandtown",
+    "Hamilton Hills":          "Harford/Echodale",
+}
+gdf = gpd.read_file(DATA / "Community_Statistical_Areas.geojson")
+gdf["csa2010"] = gdf["CSA2020"].map(lambda x: CSA_RENAME.get(x, x) if x else x)
+gdf = gdf.merge(df, on="csa2010", how="left")
+
+geo_dict = json.loads(gdf[["csa2010", "geometry"]].to_json())
+for feature, row in zip(geo_dict["features"], gdf.itertuples()):
+    feature["id"] = row.csa2010
+
+# --- Pre-compute correlations ---
+def pearson(x, y):
+    sub = df[[x, y]].dropna()
+    r, p = stats.pearsonr(sub[x], sub[y])
+    return r, p, len(sub)
+
+def bivariate_table(rate_col, exclude_extra=None):
+    exclude = {
+        rate_col, "csa2010", "eviction_count", "bnia_eviction_rate",
+        "total_pop", "total_hh", "renter_hh",
+        "total_residential_properties", "total_residential_units",
+        "bnia_total_residential_props", "total_rental_units",
+        "unique_owners", "units_top_10_owners",
+        "eviction_rate_per_1k_residents", "eviction_rate_per_1k_households",
+        "eviction_rate_per_1k_renter_hh", "eviction_rate_per_1k_rentals",
+    }
+    if exclude_extra:
+        exclude |= set(exclude_extra)
+    rows = []
+    for feat in [c for c in df.columns if c not in exclude]:
+        sub = df[[rate_col, feat]].dropna()
+        if len(sub) < 10:
+            continue
+        r, p = stats.pearsonr(sub[rate_col], sub[feat])
+        sr, sp = stats.spearmanr(sub[rate_col], sub[feat])
+        rows.append({
+            "feature": feat, "n": len(sub),
+            "pearson_r": round(r, 3), "pearson_p": round(p, 4),
+            "spearman_r": round(sr, 3), "spearman_p": round(sp, 4),
+        })
+    return (
+        pd.DataFrame(rows)
+        .assign(abs_r=lambda x: x["pearson_r"].abs())
+        .sort_values("abs_r", ascending=False)
+        .drop(columns="abs_r")
+        .reset_index(drop=True)
+    )
+
+r_w_concentration, p_w_concentration, _ = pearson("ownership_concentration_pct", "eviction_rate_per_1k_residents")
+r_w_income,        p_w_income,        _ = pearson("median_hh_income",            "eviction_rate_per_1k_residents")
+r_w_race,          p_w_race,          _ = pearson("pct_black_non_hisp",          "eviction_rate_per_1k_residents")
+r_w_lowinc,        p_w_lowinc,        _ = pearson("pct_hh_income_under_25k",     "eviction_rate_per_1k_residents")
+r_w_unemp,         p_w_unemp,         _ = pearson("unemployment_rate",           "eviction_rate_per_1k_residents")
+
+r_b_concentration, p_b_concentration, _ = pearson("ownership_concentration_pct", "bnia_eviction_rate")
+r_b_income,        p_b_income,        _ = pearson("median_hh_income",            "bnia_eviction_rate")
+r_b_race,          p_b_race,          _ = pearson("pct_black_non_hisp",          "bnia_eviction_rate")
+r_b_lowinc,        p_b_lowinc,        _ = pearson("pct_hh_income_under_25k",     "bnia_eviction_rate")
+r_b_unemp,         p_b_unemp,         _ = pearson("unemployment_rate",           "bnia_eviction_rate")
+
+r_cross, p_cross, n_cross = pearson("eviction_rate_per_1k_residents", "bnia_eviction_rate")
+
+# --- Shared style ---
+PLOTLY_TEMPLATE = "plotly_white"
+MAPBOX_STYLE    = "carto-positron"
+MAP_CENTER      = {"lat": 39.2904, "lon": -76.6122}
+MAP_ZOOM        = 10
+COLOR_SEQ       = px.colors.sequential.Reds
+WARRANT_COLOR   = "#c0392b"
+BNIA_COLOR      = "#2980b9"
+```
+
+## Two Ways to Measure Eviction
+
+Eviction can be measured at two points in the legal process:
+
+- **Eviction warrant filings** (this analysis, December 2024) — the moment a landlord initiates court proceedings. Many tenants self-evict after receiving a notice, leaving before their court date to avoid a formal record. The filing alone disrupts households, triggers informal credit damage, and burdens courts regardless of outcome.
+
+- **Actual evictions** (BNIA Vital Signs, 2023) — cases that proceeded to a completed removal. This is the conventional measure, but it systematically undercounts displacement because self-eviction goes unrecorded.
+
+Both rates below use the same denominator — **evictions or warrants per 1,000 residents** — for a direct comparison.
+
+---
+
+## Where Each Rate Is High
+
+```{python}
+#| label: map-warrants
+
+fig = px.choropleth_mapbox(
+    gdf, geojson=geo_dict, locations="csa2010",
+    color="eviction_rate_per_1k_residents",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE, center=MAP_CENTER, zoom=MAP_ZOOM,
+    opacity=0.75, hover_name="csa2010",
+    hover_data={"eviction_rate_per_1k_residents": ":.1f", "csa2010": False},
+    labels={"eviction_rate_per_1k_residents": "Warrants per 1k residents"},
+)
+fig.update_layout(
+    title="Eviction Warrant Rate — December 2024 (per 1,000 Residents)",
+    margin=dict(t=50, b=0, l=0, r=0), height=500,
+    coloraxis_colorbar=dict(title="Warrants<br>per 1k res."),
+)
+fig.show()
+```
+
+```{python}
+#| label: map-bnia
+
+fig = px.choropleth_mapbox(
+    gdf, geojson=geo_dict, locations="csa2010",
+    color="bnia_eviction_rate",
+    color_continuous_scale=COLOR_SEQ,
+    mapbox_style=MAPBOX_STYLE, center=MAP_CENTER, zoom=MAP_ZOOM,
+    opacity=0.75, hover_name="csa2010",
+    hover_data={"bnia_eviction_rate": ":.1f", "csa2010": False},
+    labels={"bnia_eviction_rate": "Evictions per 1k residents"},
+)
+fig.update_layout(
+    title="Actual Eviction Rate — BNIA 2023 (per 1,000 Residents)",
+    margin=dict(t=50, b=0, l=0, r=0), height=500,
+    coloraxis_colorbar=dict(title="Evictions<br>per 1k res."),
+)
+fig.show()
+```
+
+The two maps share broad geography — high-displacement neighborhoods in East and West Baltimore appear in both — but the warrant map shows higher rates in areas with concentrated landlord ownership that don't stand out as sharply in the BNIA map.
+
+---
+
+## How Well Do They Correlate?
+
+```{python}
+#| label: scatter-cross
+
+fig = px.scatter(
+    df, x="bnia_eviction_rate", y="eviction_rate_per_1k_residents",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "bnia_eviction_rate": "BNIA Actual Eviction Rate (per 1,000 Residents, 2023)",
+        "eviction_rate_per_1k_residents": "Warrant Filing Rate (per 1,000 Residents, Dec 2024)",
+    },
+    title="Warrant filing rate vs. actual eviction rate — same denominator",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=BNIA_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=460, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Pearson r = `{python} f"{r_cross:.2f}"`, p = `{python} f"{p_cross:.4f}"` (n = `{python} n_cross` CSAs)*
+
+A moderate positive correlation — the two measures broadly agree on which neighborhoods have elevated eviction pressure. But the relationship is far from 1:1, and the scatter below shows the divergence is structured, not random.
+
+---
+
+## What Predicts Each Rate?
+
+The two measures are driven by almost entirely different structural factors.
+
+### Ownership Concentration
+
+```{python}
+#| label: scatter-concentration-w
+
+fig = px.scatter(
+    df, x="ownership_concentration_pct", y="eviction_rate_per_1k_residents",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "eviction_rate_per_1k_residents": "Warrant Filing Rate (per 1,000 Residents)",
+    },
+    title="Ownership concentration vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=WARRANT_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_w_concentration:.2f}"`, p = `{python} f"{p_w_concentration:.4f}"`*
+
+```{python}
+#| label: scatter-concentration-b
+
+fig = px.scatter(
+    df, x="ownership_concentration_pct", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "ownership_concentration_pct": "Top-10-Owner Share of Rental Units (%)",
+        "bnia_eviction_rate": "Actual Eviction Rate (per 1,000 Residents, BNIA 2023)",
+    },
+    title="Ownership concentration vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=BNIA_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_b_concentration:.2f}"`, p = `{python} f"{p_b_concentration:.4f}"`*
+
+### Median Household Income
+
+```{python}
+#| label: scatter-income-w
+
+fig = px.scatter(
+    df, x="median_hh_income", y="eviction_rate_per_1k_residents",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "median_hh_income": "Median Household Income ($)",
+        "eviction_rate_per_1k_residents": "Warrant Filing Rate (per 1,000 Residents)",
+    },
+    title="Income vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=WARRANT_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_w_income:.2f}"`, p = `{python} f"{p_w_income:.4f}"`*
+
+```{python}
+#| label: scatter-income-b
+
+fig = px.scatter(
+    df, x="median_hh_income", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "median_hh_income": "Median Household Income ($)",
+        "bnia_eviction_rate": "Actual Eviction Rate (per 1,000 Residents, BNIA 2023)",
+    },
+    title="Income vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=BNIA_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_b_income:.2f}"`, p = `{python} f"{p_b_income:.4f}"`*
+
+### Racial Composition
+
+```{python}
+#| label: scatter-race-w
+
+fig = px.scatter(
+    df, x="pct_black_non_hisp", y="eviction_rate_per_1k_residents",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black_non_hisp": "% Black (non-Hispanic) Residents",
+        "eviction_rate_per_1k_residents": "Warrant Filing Rate (per 1,000 Residents)",
+    },
+    title="Racial composition vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=WARRANT_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_w_race:.2f}"`, p = `{python} f"{p_w_race:.4f}"`*
+
+```{python}
+#| label: scatter-race-b
+
+fig = px.scatter(
+    df, x="pct_black_non_hisp", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "pct_black_non_hisp": "% Black (non-Hispanic) Residents",
+        "bnia_eviction_rate": "Actual Eviction Rate (per 1,000 Residents, BNIA 2023)",
+    },
+    title="Racial composition vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=BNIA_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_b_race:.2f}"`, p = `{python} f"{p_b_race:.4f}"`*
+
+### Unemployment Rate
+
+```{python}
+#| label: scatter-unemp-w
+
+fig = px.scatter(
+    df, x="unemployment_rate", y="eviction_rate_per_1k_residents",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "unemployment_rate": "Unemployment Rate (%)",
+        "eviction_rate_per_1k_residents": "Warrant Filing Rate (per 1,000 Residents)",
+    },
+    title="Unemployment vs. Warrant Filing Rate",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=WARRANT_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*Warrants — Pearson r = `{python} f"{r_w_unemp:.2f}"`, p = `{python} f"{p_w_unemp:.4f}"`*
+
+```{python}
+#| label: scatter-unemp-b
+
+fig = px.scatter(
+    df, x="unemployment_rate", y="bnia_eviction_rate",
+    hover_name="csa2010", trendline="ols", template=PLOTLY_TEMPLATE,
+    labels={
+        "unemployment_rate": "Unemployment Rate (%)",
+        "bnia_eviction_rate": "Actual Eviction Rate (per 1,000 Residents, BNIA 2023)",
+    },
+    title="Unemployment vs. Actual Eviction Rate (BNIA)",
+)
+fig.update_traces(marker=dict(size=8, opacity=0.7, color=BNIA_COLOR), selector=dict(mode="markers"))
+fig.update_layout(height=410, margin=dict(t=60, b=40))
+fig.show()
+```
+
+*BNIA — Pearson r = `{python} f"{r_b_unemp:.2f}"`, p = `{python} f"{p_b_unemp:.4f}"`*
+
+---
+
+## Full Bivariate Correlation Tables
+
+### Warrant Filing Rate (per 1,000 Residents)
+
+```{python}
+#| label: bivariate-warrants
+
+warrant_corr = bivariate_table("eviction_rate_per_1k_residents")
+warrant_corr.style \
+    .set_table_styles([
+        {"selector": "thead th", "props": [("background-color", "#2c3e50"), ("color", "white"), ("font-weight", "bold")]},
+        {"selector": "tbody tr:nth-child(even)", "props": [("background-color", "#f9f9f9")]},
+        {"selector": "td, th", "props": [("padding", "6px 12px"), ("text-align", "left")]},
+    ]) \
+    .bar(subset=["pearson_r"], color=["#aed6f1", "#c0392b"], vmin=-1, vmax=1) \
+    .format({"pearson_r": "{:.3f}", "pearson_p": "{:.4f}", "spearman_r": "{:.3f}", "spearman_p": "{:.4f}"})
+```
+
+### Actual Eviction Rate — BNIA 2023 (per 1,000 Residents)
+
+```{python}
+#| label: bivariate-bnia
+
+bnia_corr = bivariate_table("bnia_eviction_rate")
+bnia_corr.style \
+    .set_table_styles([
+        {"selector": "thead th", "props": [("background-color", "#2c3e50"), ("color", "white"), ("font-weight", "bold")]},
+        {"selector": "tbody tr:nth-child(even)", "props": [("background-color", "#f9f9f9")]},
+        {"selector": "td, th", "props": [("padding", "6px 12px"), ("text-align", "left")]},
+    ]) \
+    .bar(subset=["pearson_r"], color=["#aed6f1", "#2980b9"], vmin=-1, vmax=1) \
+    .format({"pearson_r": "{:.3f}", "pearson_p": "{:.4f}", "spearman_r": "{:.3f}", "spearman_p": "{:.4f}"})
+```
+
+---
+
+## What the Divergence Means
+
+The two measures agree on broad geography but diverge on causation:
+
+- **Warrant filings** are primarily predicted by **ownership concentration** — concentrated landlords appear to use the court system as a portfolio management tool, filing across their holdings regardless of neighborhood demographics. Income, race, and unemployment are not statistically significant predictors.
+
+- **Actual evictions** follow the standard Baltimore pattern: **income, race, and unemployment** are all highly significant (p < 0.001), while ownership concentration is not. Completed evictions trace structural vulnerability, not landlord filing behavior.
+
+Both patterns matter. Tracking only completed evictions obscures the role that concentrated ownership plays in burdening the court system and pressuring tenants — many of whom self-evict before a judgment is ever entered.

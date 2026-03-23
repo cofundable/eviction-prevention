@@ -1,6 +1,6 @@
 import type { Party, Root, Cheerio, Element } from "./types";
 import { PartyType } from "./types";
-import { getTextValue } from "./helpers";
+import { getTextValue, normalizeName, normalizeAddressObject } from "./helpers";
 import { parseAddress } from "./address";
 
 /**
@@ -12,7 +12,9 @@ const PARTY_TYPE_MAPPING: Array<{
   partyType: PartyType;
 }> = [
   { headerText: "Landlord / Plaintiff", partyType: PartyType.LANDLORD },
+  { headerText: "Plaintiff", partyType: PartyType.LANDLORD },
   { headerText: "Tenant / Defendant", partyType: PartyType.TENANT },
+  { headerText: "Defendant", partyType: PartyType.TENANT },
   { headerText: "Landlord's Agent", partyType: PartyType.AGENT },
 ];
 
@@ -49,18 +51,27 @@ function parseParty(
 
   const name = getTextValue(nameRow.find(".Value"));
 
+  // Normalize the name
+  const { normalized: nameNormalized, parts: nameParts } = normalizeName(name);
+
   // Find the table containing the address (usually the next table after the name)
   let addressTable = nameRow.closest("table").next("table");
   if (addressTable.length === 0) {
-    addressTable = nameRow.closest("table");
+    addressTable = nameRow.closest("table") as Cheerio;
   }
 
   const address = parseAddress($, addressTable);
 
+  // Normalize the entire address
+  const addressNormalized = normalizeAddressObject(address);
+
   const party: Party = {
     partyType,
     name,
+    nameNormalized,
+    nameParts,
     address,
+    addressNormalized,
   };
 
   return party;
