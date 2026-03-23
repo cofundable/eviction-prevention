@@ -6,8 +6,8 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 <BaseLayout title="Home">
   <section class="hero">
     <div class="container">
-      <div class="hero__stat">3,000+</div>
       <h1 class="hero__heading">The Social Determinants of Eviction</h1>
+      <div class="hero__stat">3,000+</div>
       <p class="hero__sub">
         Eviction warrants filed in a single month in Baltimore City — and the
         patterns that explain who's being targeted.
@@ -47,7 +47,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     <div class="container">
       <div class="cards__grid">
         <a href="/dashboard" class="card">
-          <div class="card__icon">🗺</div>
           <h3 class="card__title">Neighborhood Dashboard</h3>
           <p class="card__desc">
             Explore eviction rates, income, racial composition, and ownership
@@ -56,7 +55,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <span class="card__cta">Explore →</span>
         </a>
         <a href="/story" class="card">
-          <div class="card__icon">📊</div>
           <h3 class="card__title">Data Story</h3>
           <p class="card__desc">
             A guided analysis: who files the most warrants, which neighborhoods
@@ -65,7 +63,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
           <span class="card__cta">Read →</span>
         </a>
         <a href="/data" class="card card--small">
-          <div class="card__icon">⬇</div>
           <h3 class="card__title">Download the data</h3>
           <p class="card__desc">
             Sanitized CSVs and a documented API for researchers and journalists.
@@ -76,28 +73,6 @@ import BaseLayout from "../layouts/BaseLayout.astro";
     </div>
   </section>
 
-  <section class="stats-bar">
-    <div class="container">
-      <div class="stats-bar__grid">
-        <div class="stat">
-          <span class="stat__value">3,000+</span>
-          <span class="stat__label">warrants in December 2024</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value">&lt;10%</span>
-          <span class="stat__label">resulted in formal eviction</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value">r = 0.45</span>
-          <span class="stat__label">ownership concentration → warrants</span>
-        </div>
-        <div class="stat">
-          <span class="stat__value">55</span>
-          <span class="stat__label">neighborhoods analyzed</span>
-        </div>
-      </div>
-    </div>
-  </section>
 </BaseLayout>
 
 <style>

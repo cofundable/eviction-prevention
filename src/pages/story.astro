@@ -25,6 +25,25 @@ try {
         headers.map((h, i) => [h.trim(), isNaN(Number(vals[i])) ? vals[i] : Number(vals[i])])
       );
     });
+
+    // Merge BNIA eviction rate (evict23) into csaFeatures as bnia_eviction_rate
+    const bniaPath = path.resolve(process.cwd(), "data/bnia_evictions.csv");
+    if (fs.existsSync(bniaPath)) {
+      const bniaLines = fs.readFileSync(bniaPath, "utf-8").trim().split("\n");
+      const bniaHeaders = bniaLines[0].replace(/^\uFEFF/, "").split(",");
+      const csaIdx = bniaHeaders.indexOf("CSA2010");
+      const rateIdx = bniaHeaders.indexOf("evict23");
+      const bniaMap = new Map(
+        bniaLines.slice(1).map((line) => {
+          const vals = line.split(",");
+          return [vals[csaIdx]?.trim(), Number(vals[rateIdx])];
+        })
+      );
+      csaFeatures = csaFeatures.map((row) => ({
+        ...row,
+        bnia_eviction_rate: bniaMap.get(row.csa2010 as string) ?? null,
+      }));
+    }
   }
 
   // landlord_master.csv — plaintiff + matched SDAT owner + warrant/eviction counts
@@ -95,12 +114,12 @@ try {
     <!-- 1. Hook -->
     <section class="story__section story__section--dark">
       <div class="container container--prose">
+        <h1>Social Determinants of Eviction</h1>
         <div class="display-stat">3,000+</div>
-        <h1>The Social Determinants of Eviction</h1>
         <p class="lead">
           In a single month — December 2024 — Baltimore landlords filed more
-          than 3,000 eviction warrants. That's roughly one in every 83
-          households. But most of those warrants never resulted in an actual
+          than 3,000 eviction warrants. That's roughly <strong>one in every 83
+          households</strong>. But most of those warrants never resulted in an actual
           eviction.
         </p>
       </div>
@@ -174,8 +193,8 @@ try {
         <h2>When we look at <em>actual</em> evictions, the pattern is familiar</h2>
         <p class="section-intro">
           BNIA's 2023 eviction data — which tracks formal evictions, not warrant
-          filings — shows the expected correlations. Higher Black population and
-          lower income strongly predict eviction rates.
+          filings — shows the expected correlations. Social determinants like
+          race and income strongly predict eviction rates.
         </p>
         <div class="chart-pair">
           <div class="chart-col">
@@ -183,7 +202,7 @@ try {
               client:visible
               data={csaFeatures}
               xField="pct_black_non_hisp"
-              yField="eviction_rate_per_1k_residents"
+              yField="bnia_eviction_rate"
               xLabel="% Black, non-Hispanic"
               yLabel="BNIA eviction rate (per 1k)"
               rValue={0.57}
@@ -197,7 +216,7 @@ try {
               client:visible
               data={csaFeatures}
               xField="median_hh_income"
-              yField="eviction_rate_per_1k_residents"
+              yField="bnia_eviction_rate"
               xLabel="Median household income"
               yLabel="BNIA eviction rate (per 1k)"
               rValue={-0.62}
@@ -255,7 +274,7 @@ try {
     <!-- 7. Punchline — ownership concentration -->
     <section class="story__section story__section--warm">
       <div class="container">
-        <h2>The strongest predictor: who owns the buildings</h2>
+        <h2>The strongest predictor: who controls the rental market</h2>
         <p class="section-intro">
           The only factor that significantly predicts warrant filing rates is
           ownership concentration — the share of rental units controlled by the
@@ -310,21 +329,26 @@ try {
           <div class="comparison__col">
             <h3>For tenants</h3>
             <ul>
-              <li>Eviction record follows them for years</li>
-              <li>Barriers to future rental applications</li>
-              <li>Court appearance required or default judgment</li>
-              <li>Potential wage garnishment</li>
+              <li>Eviction records follow them for years</li>
+              <li>Cases affect housing and credit access</li>
+              <li>Difficult to expunge or seal cases decided in favor of the landlord</li>
             </ul>
           </div>
           <div class="comparison__col">
             <h3>For landlords</h3>
             <ul>
-              <li>No penalty for filing and then withdrawing</li>
-              <li>Filing cost: ~$46 per case</li>
-              <li>Warrant can be used as leverage for rent payment</li>
-              <li>High-volume filers face no public accountability</li>
+              <li>Filing patterns are largely inaccessible</li>
+              <li>Frequent filers face no formal scrutiny</li>
+              <li>No public record of cases decided against them</li>
             </ul>
           </div>
+        </div>
+        <div class="callout callout--dark">
+          <p>
+            When eviction rates and health outcomes share a similar set of
+            factors, why does our system protect landlords from negligent
+            renters — without protecting renters from predatory landlords?
+          </p>
         </div>
       </div>
     </section>
@@ -434,6 +458,17 @@ try {
   .callout p {
     max-width: none;
     margin: 0;
+  }
+
+  .callout--dark {
+    background: rgba(255, 255, 255, 0.08);
+    border-left-color: var(--color-amber-400);
+  }
+
+  .callout--dark p {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: var(--text-lg);
+    line-height: var(--leading-loose);
   }
 
   .process-steps {

@@ -66,7 +66,7 @@
         layers: [{ id: "background", type: "background", paint: { "background-color": "#f8f4ef" } }],
       },
       center: [-76.6122, 39.2904],
-      zoom: 11,
+      zoom: 10.5,
       attributionControl: false,
       scrollZoom: false,
       boxZoom: false,
