@@ -139,6 +139,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
   "data": [
     {
       "csa": "Greenmount East",
+      "slug": "greenmount-east",
       "eviction_count": 87,
       "eviction_rate_per_1k_residents": 28.1,
       "pct_black_non_hisp": 92.3,
@@ -153,17 +154,18 @@ import BaseLayout from "../layouts/BaseLayout.astro";
       <div class="endpoint">
         <div class="endpoint__header">
           <span class="method">GET</span>
-          <code class="path">/api/csa/:name</code>
+          <code class="path">/api/csa/:slug</code>
         </div>
         <p>
-          Single CSA with its top landlords. Name is URL-encoded (e.g.
-          <code>Greenmount%20East</code>).
+          Single CSA with its top landlords. Slug is the CSA name lowercased
+          with spaces replaced by hyphens (e.g. <code>greenmount-east</code>).
         </p>
         <pre
-          class="code-block"><code>{`GET /api/csa/Greenmount%20East
+          class="code-block"><code>{`GET /api/csa/greenmount-east
 
 {
   "csa": "Greenmount East",
+  "slug": "greenmount-east",
   "eviction_rate_per_1k_residents": 28.1,
   ...
   "top_landlords": [
