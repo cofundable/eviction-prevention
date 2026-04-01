@@ -16,7 +16,8 @@ const d1Dir = path.resolve(
 const sqliteFiles = fs
   .readdirSync(d1Dir)
   .filter((f) => f.endsWith(".sqlite"))
-  .map((f) => path.join(d1Dir, f));
+  .map((f) => path.join(d1Dir, f))
+  .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
 let dbPath: string | null = null;
 for (const f of sqliteFiles) {
   const db = new Database(f, { readonly: true });
@@ -38,13 +39,38 @@ if (!dbPath)
 console.log(`Using DB: ${dbPath}`);
 const db = new Database(dbPath, { readonly: true });
 
-// 1. csa_features.csv — copy from analysis/outputs, renaming csa2010 → csa
-const src = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
-const csaLines = fs.readFileSync(src, "utf-8").trim().split("\n");
-const csaHeader = csaLines[0].replace(/^csa2010/, "csa");
-const csaOut = [csaHeader, ...csaLines.slice(1)].join("\n") + "\n";
-fs.writeFileSync(path.join(OUT_DIR, "csa_features.csv"), csaOut);
-console.log(`csa_features.csv: ${csaLines.length - 1} rows`);
+// 1. csa_features.csv — all columns from analysis/outputs, plus bnia_eviction_rate
+const analysisPath = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
+const bniaPath = path.resolve(process.cwd(), "data/bnia_evictions.csv");
+
+const analysisLines = fs.readFileSync(analysisPath, "utf-8").trim().split("\n");
+const analysisHeaders = analysisLines[0].split(",");
+
+const bniaRateMap = new Map<string, string>();
+if (fs.existsSync(bniaPath)) {
+  const bniaLines = fs.readFileSync(bniaPath, "utf-8").trim().split("\n");
+  const bniaHeaders = bniaLines[0].split(",");
+  const csaIdx = bniaHeaders.indexOf("CSA2010");
+  const rateIdx = bniaHeaders.indexOf("evict23");
+  for (const line of bniaLines.slice(1)) {
+    const cols = line.split(",");
+    if (cols[csaIdx] && cols[rateIdx]) bniaRateMap.set(cols[csaIdx].trim(), cols[rateIdx].trim());
+  }
+}
+
+const csaFeatureLines = [
+  [...analysisHeaders, "bnia_eviction_rate"].join(","),
+  ...analysisLines.slice(1).map((line) => {
+    const cols = line.split(",");
+    const csaName = (cols[0] ?? "").trim();
+    return line + "," + (bniaRateMap.get(csaName) ?? "");
+  }),
+];
+fs.writeFileSync(
+  path.join(OUT_DIR, "csa_features.csv"),
+  csaFeatureLines.join("\n") + "\n"
+);
+console.log(`csa_features.csv: ${analysisLines.length - 1} rows`);
 
 // 2. cases_sanitized.csv — from cases_public, no defendant names
 function toCsvRow(vals: unknown[]): string {
