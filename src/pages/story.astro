@@ -99,9 +99,7 @@ try {
     const pct = (n: number) => Math.round((n / grandTotal) * 100);
     const top3 = all.slice(0, 3).reduce((s, r) => s + r.total_warrants, 0);
     const next17 = all.slice(3, 20).reduce((s, r) => s + r.total_warrants, 0);
-    const next80 = all
-      .slice(20, 100)
-      .reduce((s, r) => s + r.total_warrants, 0);
+    const next80 = all.slice(20, 100).reduce((s, r) => s + r.total_warrants, 0);
     const rest = all.slice(100).reduce((s, r) => s + r.total_warrants, 0);
     concentrationData = [
       { tier: "Top 3", pct: pct(top3), color: "#b88500" },

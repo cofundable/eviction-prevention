@@ -40,7 +40,10 @@ console.log(`Using DB: ${dbPath}`);
 const db = new Database(dbPath, { readonly: true });
 
 // 1. csa_features.csv — all columns from analysis/outputs, plus bnia_eviction_rate
-const analysisPath = path.resolve(process.cwd(), "analysis/outputs/csa_features.csv");
+const analysisPath = path.resolve(
+  process.cwd(),
+  "analysis/outputs/csa_features.csv"
+);
 const bniaPath = path.resolve(process.cwd(), "data/bnia_evictions.csv");
 
 const analysisLines = fs.readFileSync(analysisPath, "utf-8").trim().split("\n");
@@ -54,7 +57,8 @@ if (fs.existsSync(bniaPath)) {
   const rateIdx = bniaHeaders.indexOf("evict23");
   for (const line of bniaLines.slice(1)) {
     const cols = line.split(",");
-    if (cols[csaIdx] && cols[rateIdx]) bniaRateMap.set(cols[csaIdx].trim(), cols[rateIdx].trim());
+    if (cols[csaIdx] && cols[rateIdx])
+      bniaRateMap.set(cols[csaIdx].trim(), cols[rateIdx].trim());
   }
 }
 
