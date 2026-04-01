@@ -21,6 +21,7 @@ const ROOT = resolve(__dirname, "..");
 const DB_PATH = resolve(ROOT, "evictions.db");
 const CSA_FEATURES_PATH = resolve(ROOT, "analysis/outputs/csa_features.csv");
 const TRACT_CSA_PATH = resolve(ROOT, "analysis/data/tract_to_csa.csv");
+const BNIA_PATH = resolve(ROOT, "data/bnia_evictions.csv");
 const JSON_DIR = resolve(ROOT, "data/json");
 const OUT_PATH = resolve(ROOT, "seed.sql");
 
@@ -90,6 +91,20 @@ console.log(`  Evicted cases: ${evictedSet.size}`);
 const csaRows = parseCsv(readFileSync(CSA_FEATURES_PATH, "utf-8"));
 console.log(`  CSA feature rows: ${csaRows.length}`);
 
+// BNIA eviction rate (evict23) — optional, keyed by CSA2010 name
+const bniaRateMap = new Map<string, number>();
+if (existsSync(BNIA_PATH)) {
+  const bniaRows = parseCsv(readFileSync(BNIA_PATH, "utf-8"));
+  for (const r of bniaRows) {
+    const key = (r["CSA2010"] ?? "").trim();
+    const rate = parseFloat(r["evict23"] ?? "");
+    if (key && !isNaN(rate)) bniaRateMap.set(key, rate);
+  }
+  console.log(`  BNIA eviction rate rows: ${bniaRateMap.size}`);
+} else {
+  console.log("  BNIA CSV not found — bnia_eviction_rate will be NULL");
+}
+
 // ─── Build SQL ─────────────────────────────────────────────────────────────
 
 const lines: string[] = [];
@@ -133,7 +148,8 @@ lines.push(`CREATE TABLE csa_features (
   pct_white_non_hisp REAL,
   median_hh_income REAL,
   pct_hh_income_under_25k REAL,
-  unemployment_rate REAL
+  unemployment_rate REAL,
+  bnia_eviction_rate REAL
 );`);
 
 lines.push(`CREATE TABLE landlord_csa (
@@ -241,8 +257,12 @@ for (const r of csaRows) {
     const v = parseFloat(r[k]);
     return isNaN(v) ? "NULL" : String(v);
   };
+  const csaKey = (r["csa2010"] ?? "").trim();
+  const bniaRate = bniaRateMap.has(csaKey)
+    ? String(bniaRateMap.get(csaKey))
+    : "NULL";
   lines.push(
-    `INSERT OR IGNORE INTO csa_features VALUES (${esc(r["csa2010"])}, ${n("eviction_count")}, ${n("total_pop")}, ${n("total_hh")}, ${n("renter_hh")}, ${n("total_rental_units")}, ${n("eviction_rate_per_1k_residents")}, ${n("eviction_rate_per_1k_renter_hh")}, ${n("ownership_concentration_pct")}, ${n("unique_owners")}, ${n("pct_black_non_hisp")}, ${n("pct_white_non_hisp")}, ${n("median_hh_income")}, ${n("pct_hh_income_under_25k")}, ${n("unemployment_rate")});`
+    `INSERT OR IGNORE INTO csa_features VALUES (${esc(r["csa2010"])}, ${n("eviction_count")}, ${n("total_pop")}, ${n("total_hh")}, ${n("renter_hh")}, ${n("total_rental_units")}, ${n("eviction_rate_per_1k_residents")}, ${n("eviction_rate_per_1k_renter_hh")}, ${n("ownership_concentration_pct")}, ${n("unique_owners")}, ${n("pct_black_non_hisp")}, ${n("pct_white_non_hisp")}, ${n("median_hh_income")}, ${n("pct_hh_income_under_25k")}, ${n("unemployment_rate")}, ${bniaRate});`
   );
 }
 console.log(`  CSA rows: ${csaRows.length}`);

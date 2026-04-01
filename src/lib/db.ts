@@ -16,7 +16,8 @@ export async function getCsaFeatures(db: D1Database): Promise<CsaFeature[]> {
               total_rental_units, eviction_rate_per_1k_residents,
               eviction_rate_per_1k_renter_hh, ownership_concentration_pct,
               unique_owners, pct_black_non_hisp, pct_white_non_hisp,
-              median_hh_income, pct_hh_income_under_25k, unemployment_rate
+              median_hh_income, pct_hh_income_under_25k, unemployment_rate,
+              bnia_eviction_rate
        FROM csa_features
        ORDER BY eviction_rate_per_1k_residents DESC`
     )
@@ -34,7 +35,8 @@ export async function getCsaDetail(
               total_rental_units, eviction_rate_per_1k_residents,
               eviction_rate_per_1k_renter_hh, ownership_concentration_pct,
               unique_owners, pct_black_non_hisp, pct_white_non_hisp,
-              median_hh_income, pct_hh_income_under_25k, unemployment_rate
+              median_hh_income, pct_hh_income_under_25k, unemployment_rate,
+              bnia_eviction_rate
        FROM csa_features
        WHERE LOWER(csa) = LOWER(?)`
     )

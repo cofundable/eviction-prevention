@@ -16,6 +16,7 @@ export interface CsaFeature {
   median_hh_income: number;
   pct_hh_income_under_25k: number;
   unemployment_rate: number;
+  bnia_eviction_rate: number | null;
 }
 
 export interface LandlordRow {
