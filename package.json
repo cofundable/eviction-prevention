@@ -19,6 +19,9 @@
     "load:db": "tsx scripts/load-json-to-db.ts",
     "check:missing": "tsx scripts/check-missing-cases.ts",
     "geocode": "tsx scripts/geocode-tenant-addresses.ts",
+    "seed:d1:local": "tsx scripts/seed-d1.ts && wrangler d1 execute evictions --local --file=seed.sql",
+    "seed:d1:remote": "tsx scripts/seed-d1.ts && wrangler d1 execute evictions --file=seed.sql --remote",
+    "downloads": "tsx scripts/generate-downloads.ts",
     "secrets:push": "node -e \"const o={};require('fs').readFileSync('.dev.vars','utf8').trim().split('\\n').forEach(l=>{const i=l.indexOf('=');if(i>0)o[l.slice(0,i)]=l.slice(i+1)});process.stdout.write(JSON.stringify(o))\" | wrangler secret bulk"
   },
   "dependencies": {
